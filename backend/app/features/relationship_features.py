@@ -82,8 +82,12 @@ def compute_pairwise_rag_features(
     title_inter = len(p_title_tokens.intersection(pt_title_tokens))
     title_sim = float(title_inter / title_union) if title_union > 0 else 0.0
 
-    # 7. Abstract similarity approximation
-    abstract_sim = float(np.clip(tfidf_sim * 0.95, 0.0, 1.0))
+    # 7. Abstract text similarity (genuine token Jaccard on abstracts, avoiding TF-IDF collinearity)
+    p_abs_tokens = set((paper.abstract or "").lower().split())
+    pt_abs_tokens = set((patent.abstract or "").lower().split())
+    abs_union = len(p_abs_tokens.union(pt_abs_tokens))
+    abs_inter = len(p_abs_tokens.intersection(pt_abs_tokens))
+    abstract_sim = float(abs_inter / abs_union) if abs_union > 0 else 0.0
 
     # 8. Embedding difference L2 norm
     emb_diff = float(np.linalg.norm(paper_emb - patent_emb))

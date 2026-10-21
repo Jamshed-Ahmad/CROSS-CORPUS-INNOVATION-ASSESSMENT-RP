@@ -1,0 +1,50 @@
+{
+  "Logistic Regression": {
+    "TN": 18,
+    "FP": 10,
+    "FN": 19,
+    "TP": 29
+  },
+  "Support Vector Machine (RBF)": {
+    "TN": 20,
+    "FP": 8,
+    "FN": 21,
+    "TP": 27
+  },
+  "Random Forest (100 trees)": {
+    "TN": 22,
+    "FP": 6,
+    "FN": 21,
+    "TP": 27
+  },
+  "Gradient Boosting Classifier": {
+    "TN": 17,
+    "FP": 11,
+    "FN": 19,
+    "TP": 29
+  },
+  "Existing ANN (Before Fine-Tuning)": {
+    "TN": 23,
+    "FP": 5,
+    "FN": 28,
+    "TP": 20
+  },
+  "Existing ANN (Fine-Tuned)": {
+    "TN": 22,
+    "FP": 6,
+    "FN": 22,
+    "TP": 26
+  },
+  "Feature-Fusion ANN with Attention": {
+    "TN": 18,
+    "FP": 10,
+    "FN": 24,
+    "TP": 24
+  },
+  "Siamese Cross-Attention ANN": {
+    "TN": 18,
+    "FP": 10,
+    "FN": 12,
+    "TP": 36
+  }
+}

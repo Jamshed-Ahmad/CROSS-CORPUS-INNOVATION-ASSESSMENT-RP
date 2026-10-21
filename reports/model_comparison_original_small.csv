@@ -1,0 +1,9 @@
+Category,Model,Accuracy,Precision,Recall,F1-Score,ROC-AUC,PR-AUC,Parameters,Train_Time_s,Inf_Latency_ms
+Traditional Baseline,Logistic Regression,0.6184,0.7436,0.6042,0.6667,0.6749,0.7934,10,0.022,0.018
+Traditional Baseline,Support Vector Machine (RBF),0.6184,0.7714,0.5625,0.6506,0.6644,0.7951,10,0.036,0.027
+Traditional Baseline,Random Forest (100 trees),0.6447,0.8182,0.5625,0.6667,0.6607,0.7697,10,0.15,0.095
+Traditional Baseline,Gradient Boosting Classifier,0.6053,0.725,0.6042,0.6591,0.6559,0.7244,10,0.142,0.013
+Model 1 Baseline,Existing ANN (Before Fine-Tuning),0.5658,0.8,0.4167,0.5479,0.6376,0.7454,15957,2.392,0.043
+Model 1 Fine-Tuned,Existing ANN (Fine-Tuned),0.6316,0.8125,0.5417,0.65,0.7113,0.8071,16405,2.337,0.02
+Model 2 Proposed,Feature-Fusion ANN with Attention,0.5526,0.7059,0.5,0.5854,0.6064,0.7476,45122,3.08,0.031
+Model 3 Proposed,Siamese Cross-Attention ANN,0.7105,0.7826,0.75,0.766,0.8147,0.8909,1417025,10.985,0.097

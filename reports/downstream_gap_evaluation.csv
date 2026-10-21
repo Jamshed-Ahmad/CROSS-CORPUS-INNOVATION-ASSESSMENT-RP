@@ -1,0 +1,5 @@
+Model,Relationship_Evidence_Score,Gaps_Detected,Mean_Gap_Score,Mean_Confidence,Evidence_Passages_Per_Gap,Anti_Repetition_Passed,Evidence_Grounding_Rate
+Existing ANN (Baseline),0.58,3,79.5,83.07,1.0,True,1.0
+Existing ANN (Fine-Tuned),0.65,3,80.3,83.17,1.0,True,1.0
+Feature-Fusion ANN with Attention,0.55,3,79.1,83.03,1.0,True,1.0
+Siamese Cross-Attention ANN,0.82,3,81.47,83.2,1.0,True,1.0

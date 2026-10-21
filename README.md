@@ -160,21 +160,31 @@ python training/train_relationship_model.py
 # 5. Train Multi-Task Research Gap Detection Network
 python training/train_gap_model.py
 
-# 6. Run comparative baseline evaluation and ablation study
+# 6. Run comparative baseline evaluation and ablation study (offline research baselines)
 python training/evaluate.py
 ```
 
-### Benchmark Results (Test Split)
+### 🧠 Production Models Deployed in Application
 
-| Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Logistic Regression** | 0.6184 | 0.7436 | 0.6042 | 0.6667 | 0.6756 |
-| **Support Vector Machine (RBF)** | 0.6053 | 0.8000 | 0.5000 | 0.6154 | 0.7009 |
-| **Random Forest (100 trees)** | 0.6711 | 0.8108 | 0.6250 | 0.7059 | 0.7016 |
-| **Gradient Boosting Classifier** | 0.5395 | 0.6585 | 0.5625 | 0.6067 | 0.6321 |
-| **Proposed Dual-Tower + Cross-Attention** | **0.7632** | **0.8125** | **0.8125** | **0.8125** | **0.7232** |
+The live platform and REST API backend **exclusively deploy PyTorch deep learning architectures**:
+1. **Dual-Tower Cross-Attention Relationship Model** (`app.models.relationship_model`): Evaluates semantic and technical alignment between paper and patent representations using bidirectional cross-attention.
+2. **Multi-Task Research Gap Detection Network** (`app.models.gap_detection_model`): Discovers and classifies research gaps using multi-task neural heads (Gap Score, Gap Category, Confidence).
 
-### Candidate Ranking Metrics
+> [!NOTE]
+> **Why are traditional ML models (Random Forest, SVM, Logistic Regression) mentioned below?**
+> Classical machine learning models are **NOT used in the runtime application**. They were implemented and evaluated strictly within `training/evaluate.py` as **offline comparative baselines** to benchmark the proposed neural architecture. In academic machine learning research, evaluating standard baselines is essential to empirically demonstrate that traditional tabular models cannot sufficiently capture cross-corpus semantic interactions between papers and patents, thereby validating the necessity of our proposed Dual-Tower Cross-Attention model.
+
+### 📊 Comparative Baseline Results (Offline Research Benchmark)
+
+| Model Type | Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| *Baseline (Tabular)* | Logistic Regression | 0.6184 | 0.7436 | 0.6042 | 0.6667 | 0.6756 | Evaluated baseline only |
+| *Baseline (Tabular)* | Support Vector Machine (RBF) | 0.6053 | 0.8000 | 0.5000 | 0.6154 | 0.7009 | Evaluated baseline only |
+| *Baseline (Tabular)* | Random Forest (100 trees) | 0.6711 | 0.8108 | 0.6250 | 0.7059 | 0.7016 | Evaluated baseline only |
+| *Baseline (Tabular)* | Gradient Boosting Classifier | 0.5395 | 0.6585 | 0.5625 | 0.6067 | 0.6321 | Evaluated baseline only |
+| **Proposed Neural** | **Dual-Tower + Cross-Attention** | **0.7632** | **0.8125** | **0.8125** | **0.8125** | **0.7232** | **Active in Production** |
+
+### Candidate Ranking Metrics (Proposed Model)
 - **Mean Reciprocal Rank (MRR):** `0.8906`
 - **Precision@1 / NDCG@1:** `0.8750`
 - **Precision@3 / NDCG@3:** `0.7917 / 0.8750`
@@ -196,7 +206,7 @@ It demonstrates:
 5. Non-circular ground-truth labeling and leak-free splitting
 6. Dual-Tower + Cross-Attention inference
 7. Multi-Task Gap Detection Network inference
-8. Baseline comparisons, ranking metrics, and ablation study
+8. Baseline comparisons (classical ML baselines vs. proposed neural architecture), ranking metrics, and ablation study
 9. Complete end-to-end inference demonstration
 
 ---

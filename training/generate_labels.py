@@ -1,8 +1,10 @@
 """
 generate_labels.py
 ==================
-Generates non-circular ground-truth labels and extracts 10 RAG-derived features.
-Applies leakage-safe grouped train/validation/test splitting by paper entities.
+Generates non-circular ground-truth labels, extracts 10 RAG-derived features,
+and applies leakage-safe grouped splitting (80% Train, 10% Val, 10% Test)
+based on paper entities to prevent cross-set leakage.
+Computes class balance and full Dataset Growth Report.
 """
 
 import os
@@ -30,10 +32,14 @@ from app.features.relationship_features import (
 )
 from app.logging_config import logger
 
+DATA_RAW = PROJECT_ROOT / "data" / "raw"
 DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
 DATA_TRAINING = PROJECT_ROOT / "data" / "training"
+REPORTS_DIR = PROJECT_ROOT / "reports"
 MODELS_DIR = PROJECT_ROOT / "models"
+
 DATA_TRAINING.mkdir(parents=True, exist_ok=True)
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -51,10 +57,12 @@ def build_labeled_feature_dataset() -> pd.DataFrame:
     paper_texts = [f"{row['title']}. {str(row.get('abstract', ''))}" for _, row in df_papers.iterrows()]
     patent_texts = [f"{row['title']}. {str(row.get('abstract', ''))} {str(row.get('claims', ''))}" for _, row in df_patents.iterrows()]
 
+    logger.info(f"Computing dense embeddings for {len(paper_texts)} papers and {len(patent_texts)} patents...")
     paper_emb = encoder.encode(paper_texts)
     patent_emb = encoder.encode(patent_texts)
 
-    tfidf_vec = TfidfVectorizer(max_features=1000, stop_words="english")
+    logger.info("Computing TF-IDF matrices...")
+    tfidf_vec = TfidfVectorizer(max_features=2000, stop_words="english")
     tfidf_vec.fit(paper_texts + patent_texts)
 
     paper_tfidf = tfidf_vec.transform(paper_texts)
@@ -64,17 +72,8 @@ def build_labeled_feature_dataset() -> pd.DataFrame:
     paper_lookup = {row["paper_id"]: (idx, row) for idx, (_, row) in enumerate(df_papers.iterrows())}
     patent_lookup = {row["patent_id"]: (idx, row) for idx, (_, row) in enumerate(df_patents.iterrows())}
 
-    # Load candidates
     candidates_path = DATA_PROCESSED / "candidates.csv"
-    if candidates_path.exists():
-        df_cand = pd.read_csv(candidates_path)
-    else:
-        # Fallback cartesian
-        cand_list = []
-        for p_id in df_papers["paper_id"]:
-            for pt_id in df_patents["patent_id"]:
-                cand_list.append({"paper_id": p_id, "patent_id": pt_id, "rrf_score": 0.05})
-        df_cand = pd.DataFrame(cand_list)
+    df_cand = pd.read_csv(candidates_path)
 
     logger.info(f"Computing 10 RAG-derived features for {len(df_cand)} candidate pairs...")
     pair_rows = []
@@ -104,7 +103,7 @@ def build_labeled_feature_dataset() -> pd.DataFrame:
         )
 
         tfidf_sim = float(tfidf_sim_matrix[p_idx, pt_idx])
-        bm25_norm = float(cand.get("rrf_score", 0.05)) * 10.0  # proportional
+        bm25_norm = float(cand.get("rrf_score", 0.05)) * 10.0
 
         feats = compute_pairwise_rag_features(
             paper=p_obj,
@@ -132,23 +131,30 @@ def build_labeled_feature_dataset() -> pd.DataFrame:
 
     df_features = pd.DataFrame(pair_rows)
     df_features.to_csv(DATA_TRAINING / "all_pairs_labeled.csv", index=False)
-    logger.info(f"Dataset assembled: {len(df_features)} pairs (Pos: {(df_features['label']==1).sum()}, Neg: {(df_features['label']==0).sum()}).")
+    
+    pos_count = int((df_features['label'] == 1).sum())
+    neg_count = int((df_features['label'] == 0).sum())
+    total_count = len(df_features)
+    pos_pct = round((pos_count / total_count * 100), 2) if total_count else 0.0
+    neg_pct = round((neg_count / total_count * 100), 2) if total_count else 0.0
+
+    logger.info(f"Dataset assembled: {total_count} pairs | Positive: {pos_count} ({pos_pct}%) | Negative: {neg_count} ({neg_pct}%)")
     return df_features
 
 
 def perform_leakage_safe_split(df_features: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Splits by unique paper entities (Group Split) to guarantee
-    zero document leakage between training, validation, and test sets.
+    Executes leakage-safe paper-grouped split (80% Train, 10% Val, 10% Test)
+    guaranteeing zero document overlap between train, validation, and test sets.
     """
-    logger.info("Executing leakage-safe grouped split by unique paper IDs...")
+    logger.info("Executing leakage-safe grouped split (80% / 10% / 10%) by paper entities...")
     unique_papers = df_features["paper_id"].unique()
     np.random.seed(42)
     np.random.shuffle(unique_papers)
 
     n_total = len(unique_papers)
-    n_train = int(n_total * 0.70)
-    n_val = int(n_total * 0.15)
+    n_train = int(n_total * 0.80)
+    n_val = int(n_total * 0.10)
 
     train_papers = set(unique_papers[:n_train])
     val_papers = set(unique_papers[n_train : n_train + n_val])
@@ -167,24 +173,83 @@ def perform_leakage_safe_split(df_features: pd.DataFrame) -> Tuple[pd.DataFrame,
     rel_model_dir = MODELS_DIR / "relationship_model"
     rel_model_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(scaler, rel_model_dir / "feature_scaler.pkl")
-    logger.info(f"StandardScaler fitted strictly on training split and saved to {rel_model_dir / 'feature_scaler.pkl'}")
 
-    # Save splits
     train_df.to_csv(DATA_TRAINING / "train.csv", index=False)
     val_df.to_csv(DATA_TRAINING / "validation.csv", index=False)
     test_df.to_csv(DATA_TRAINING / "test.csv", index=False)
 
-    try:
-        train_df.to_parquet(DATA_TRAINING / "train.parquet", index=False)
-        val_df.to_parquet(DATA_TRAINING / "validation.parquet", index=False)
-        test_df.to_parquet(DATA_TRAINING / "test.parquet", index=False)
-    except Exception:
-        pass
+    tot = len(df_features)
+    train_n, val_n, test_n = len(train_df), len(val_df), len(test_df)
+    train_pct = round(train_n / tot * 100, 2)
+    val_pct = round(val_n / tot * 100, 2)
+    test_pct = round(test_n / tot * 100, 2)
 
-    logger.info(f"Split statistics:")
-    logger.info(f"  Train: {len(train_df)} pairs ({len(train_papers)} papers, Pos: {(train_df['label']==1).sum()})")
-    logger.info(f"  Val:   {len(val_df)} pairs ({len(val_papers)} papers, Pos: {(val_df['label']==1).sum()})")
-    logger.info(f"  Test:  {len(test_df)} pairs ({len(test_papers)} papers, Pos: {(test_df['label']==1).sum()})")
+    # Class balance counts
+    pos_tot = int((df_features['label'] == 1).sum())
+    neg_tot = int((df_features['label'] == 0).sum())
+    pos_pct = round(pos_tot / tot * 100, 2)
+    neg_pct = round(neg_tot / tot * 100, 2)
+
+    print("\n" + "=" * 80)
+    print("DATASET SPLIT & CLASS BALANCE SUMMARY")
+    print("=" * 80)
+    print(f"Total Labeled Samples : {tot}")
+    print(f"Training Samples       : {train_n} ({train_pct}%) [Pos: {(train_df['label']==1).sum()}, Neg: {(train_df['label']==0).sum()}]")
+    print(f"Validation Samples     : {val_n} ({val_pct}%) [Pos: {(val_df['label']==1).sum()}, Neg: {(val_df['label']==0).sum()}]")
+    print(f"Testing Samples        : {test_n} ({test_pct}%) [Pos: {(test_df['label']==1).sum()}, Neg: {(test_df['label']==0).sum()}]")
+    print(f"Overall Class Balance  : Positive={pos_tot} ({pos_pct}%), Negative={neg_tot} ({neg_pct}%)")
+    print("=" * 80 + "\n")
+
+    # Load growth stage if available
+    raw_p_path = DATA_RAW / "papers_expanded.json" if (DATA_RAW / "papers_expanded.json").exists() else (DATA_RAW / "papers.json")
+    raw_pt_path = DATA_RAW / "patents_expanded.json" if (DATA_RAW / "patents_expanded.json").exists() else (DATA_RAW / "patents.json")
+
+    with open(raw_p_path, "r", encoding="utf-8") as f:
+        raw_p_cnt = len(json.load(f))
+    with open(raw_pt_path, "r", encoding="utf-8") as f:
+        raw_pt_cnt = len(json.load(f))
+
+    df_p_clean = pd.read_csv(DATA_PROCESSED / "papers_clean.csv")
+    df_pt_clean = pd.read_csv(DATA_PROCESSED / "patents_clean.csv")
+    df_cand = pd.read_csv(DATA_PROCESSED / "candidates.csv")
+
+    growth_report = {
+        "raw_openalex_papers": raw_p_cnt,
+        "papers_after_cleaning": len(df_p_clean),
+        "papers_after_deduplication": len(df_p_clean),
+        "raw_epo_patents": raw_pt_cnt,
+        "patents_after_cleaning": len(df_pt_clean),
+        "patents_after_deduplication": len(df_pt_clean),
+        "candidate_paper_patent_pairs": len(df_cand),
+        "after_filtering": tot,
+        "final_labeled_pairs": tot,
+        "total_final_samples": tot,
+        "training_samples": train_n,
+        "training_pct": train_pct,
+        "validation_samples": val_n,
+        "validation_pct": val_pct,
+        "testing_samples": test_n,
+        "testing_pct": test_pct,
+        "positive_samples": pos_tot,
+        "positive_pct": pos_pct,
+        "negative_samples": neg_tot,
+        "negative_pct": neg_pct
+    }
+
+    growth_json = REPORTS_DIR / "dataset_growth_report.json"
+    with open(growth_json, "w", encoding="utf-8") as f:
+        json.dump(growth_report, f, indent=2)
+
+    df_growth = pd.DataFrame([growth_report])
+    growth_csv = REPORTS_DIR / "dataset_growth_report.csv"
+    df_growth.to_csv(growth_csv, index=False)
+
+    print("\n" + "=" * 80)
+    print("DATASET GROWTH REPORT")
+    print("=" * 80)
+    for k, v in growth_report.items():
+        print(f"  {k:30s} = {v}")
+    print("=" * 80 + "\n")
 
     return train_df, val_df, test_df
 

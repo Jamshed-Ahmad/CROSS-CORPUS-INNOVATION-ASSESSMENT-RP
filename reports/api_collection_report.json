@@ -1,0 +1,35 @@
+{
+  "collection_summary": [
+    {
+      "source": "OpenAlex",
+      "requested": 2300,
+      "retrieved": 2300,
+      "valid": 2200,
+      "duplicate": 98,
+      "failed": 0,
+      "retrieval_success_pct": 100.0,
+      "usable_data_pct": 95.65,
+      "duplicate_pct": 4.26,
+      "failure_pct": 0.0
+    },
+    {
+      "source": "EPO OPS",
+      "requested": 675,
+      "retrieved": 343,
+      "valid": 343,
+      "duplicate": 2,
+      "failed": 225,
+      "retrieval_success_pct": 50.81,
+      "usable_data_pct": 100.0,
+      "duplicate_pct": 0.58,
+      "failure_pct": 33.33
+    }
+  ],
+  "configuration": {
+    "max_papers_target": 2200,
+    "max_patents_target": 2200,
+    "page_size": 50,
+    "queries_count": 12,
+    "request_delay_s": 0.25
+  }
+}

@@ -1,0 +1,3 @@
+source,requested,retrieved,valid,duplicate,failed,retrieval_success_pct,usable_data_pct,duplicate_pct,failure_pct
+OpenAlex,2300,2300,2200,98,0,100.0,95.65,4.26,0.0
+EPO OPS,675,343,343,2,225,50.81,100.0,0.58,33.33

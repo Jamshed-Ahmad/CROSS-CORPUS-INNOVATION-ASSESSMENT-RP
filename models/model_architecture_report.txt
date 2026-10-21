@@ -1,0 +1,559 @@
+================================================================================
+RESEARCH PROJECT MODEL ARCHITECTURE REPORT
+================================================================================
+Project: Evidence-Grounded AI Framework for Cross-Corpus Innovation Assessment
+Framework: PyTorch 2.14.1+cpu
+Date of Verification: 2026-10-20
+Status: All 3 Core Experimentation Models & Downstream Gap Network Verified
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. Overview of Neural Architectures
+2. Model 1: Existing ANN / MLP (Baseline & Fine-Tuned)
+3. Model 2: Deep Feature-Fusion ANN with Multi-Modal Attention
+4. Model 3: Siamese / Dual-Tower ANN with Bidirectional Cross-Attention
+5. Supplementary Network: Multi-Task Research Gap Detection Network
+6. Pretrained Components vs. Custom Trainable Neural Components
+7. Workflow Integration: Relationship Prediction vs. Research Gap Detection
+8. Comparative Model Matrix
+9. Research Project Model Summary
+
+================================================================================
+1. OVERVIEW OF NEURAL ARCHITECTURES
+================================================================================
+The project architecture employs a staged, evidence-grounded pipeline:
+  User Research Topic
+          ↓
+  Query Processing
+          ↓
+  OpenAlex API + EPO OPS API
+          ↓
+  Research Papers + Patents
+          ↓
+  Data Preprocessing
+          ↓
+  TF-IDF + BM25 + Sentence Transformer (MiniLM-L6-v2)
+          ↓
+  FAISS Dense Index
+          ↓
+  Reciprocal Rank Fusion (RRF, k=60)
+          ↓
+  Relevant Candidate Paper-Patent Pairs
+          ↓
+  Feature Engineering (10 Heterogeneous RAG Features)
+          ↓
+  Neural Relationship Models (Model 1, Model 2, Model 3)
+          ↓
+  Paper-Patent Relationship Score P(Related | Paper, Patent) in [0, 1]
+          ↓
+  Research Gap Candidate Formulation & Feature Extraction (12 Features)
+          ↓
+  Research Gap Detection Network (Multi-Task PyTorch Model)
+          ↓
+  Innovation Assessment & Recommendation
+
+CRITICAL ARCHITECTURAL DISTINCTION:
+  The 3 core deep-learning models (Model 1, Model 2, Model 3) are
+  PAPER-PATENT RELATIONSHIP PREDICTION MODELS. They do NOT directly predict
+  research gaps. Instead, they output a continuous relationship probability
+  score P(Related | Paper, Patent) in [0, 1]. This score is subsequently consumed
+  by downstream candidate gap feature extractors, the multi-task research gap
+  network, and the multi-dimensional innovation scoring engine.
+
+
+================================================================================
+2. MODEL 1: EXISTING ANN / MLP (BASELINE & FINE-TUNED)
+================================================================================
+
+--------------------------------------------------------------------------------
+A. MODEL 1 (ORIGINAL BASELINE): BaselinePaperPatentANN
+--------------------------------------------------------------------------------
+File:             models/baseline_ann_model.pt
+File Size:        69,725 bytes (68.09 KB)
+PyTorch Type:     collections.OrderedDict (Direct state_dict)
+Checkpoint Type:  state_dict (15 parameter tensors)
+Model Class:      BaselinePaperPatentANN
+Source File:      backend/app/models/baseline_ann.py
+Training File:    training/train_models_comparison.py (Part 2)
+Inference File:   training/evaluate_retrieval_and_gaps.py
+Architecture Match: YES (100% parameter name and shape alignment)
+
+Purpose:
+  Empirical baseline for paper-patent relationship prediction. Evaluates the
+  predictive capability of a standard feed-forward ANN with dynamic feature
+  saliency attention on 10 heterogeneous RAG features.
+
+Flow Diagram:
+  10 Input RAG Features
+          ↓
+  BatchNorm1d(10)
+          ↓
+  Dense Layer (10 -> 128)
+          ↓
+  ReLU Activation
+          ↓
+  Dropout (0.35)
+          ↓
+  Dense Layer (128 -> 64)
+          ↓
+  ReLU Activation
+          ↓
+  Dropout (0.30)
+          ↓
+  FeatureAttentionLayer (Linear(64, 64) + Softmax)
+          ↓
+  Dense Layer (64 -> 32)
+          ↓
+  ReLU Activation
+          ↓
+  Dropout (0.20)
+          ↓
+  Output Dense Layer (32 -> 1)
+          ↓
+  Sigmoid Activation -> P(Related | Paper, Patent) in [0, 1]
+
+Layer & Parameter Breakdown:
+  • bn_input:      nn.BatchNorm1d(10)                     -> 20 params
+  • fc1:           nn.Linear(10, 128)                     -> 1,408 params
+  • act1 / drop1:  nn.ReLU(), nn.Dropout(0.35)            -> 0 params
+  • fc2:           nn.Linear(128, 64)                     -> 8,256 params
+  • act2 / drop2:  nn.ReLU(), nn.Dropout(0.30)            -> 0 params
+  • attention:     FeatureAttentionLayer(dim=64)          -> 4,160 params
+  • fc3:           nn.Linear(64, 32)                      -> 2,080 params
+  • act3 / drop3:  nn.ReLU(), nn.Dropout(0.20)            -> 0 params
+  • output_layer:  nn.Linear(32, 1)                       -> 33 params
+  • sigmoid:       nn.Sigmoid()                           -> 0 params
+
+Parameter Summary:
+  Total Parameters:         15,957
+  Trainable Parameters:     15,957
+  Non-Trainable Parameters: 0
+
+
+--------------------------------------------------------------------------------
+B. MODEL 1 (FINE-TUNED): FineTunedPaperPatentANN
+--------------------------------------------------------------------------------
+File:             models/finetuned_ann_model.pt
+File Size:        73,192 bytes (71.48 KB)
+PyTorch Type:     collections.OrderedDict (Direct state_dict)
+Checkpoint Type:  state_dict (21 parameter tensors)
+Model Class:      FineTunedPaperPatentANN
+Source File:      backend/app/models/baseline_ann.py
+Training File:    training/train_models_comparison.py (Part 3)
+Inference File:   training/evaluate_retrieval_and_gaps.py
+Architecture Match: YES (100% parameter name and shape alignment)
+
+Purpose:
+  Optimized variant of the baseline ANN. Incorporates Layer Normalization across
+  intermediate activations, LeakyReLU(0.1) non-linearities for gradient flow,
+  a residual skip connection over feature attention, and a tuned dropout funnel.
+
+Flow Diagram:
+  10 Input RAG Features
+          ↓
+  BatchNorm1d(10)
+          ↓
+  Dense Layer (10 -> 128) + LayerNorm(128) + LeakyReLU(0.1) + Dropout(0.25)
+          ↓
+  Dense Layer (128 -> 64) + LayerNorm(64) + LeakyReLU(0.1) + Dropout(0.20)
+          ↓
+  FeatureAttentionLayer(64) + Residual Skip (h2 + Attention(h2))
+          ↓
+  Dense Layer (64 -> 32) + LayerNorm(32) + LeakyReLU(0.1) + Dropout(0.15)
+          ↓
+  Output Dense Layer (32 -> 1) + Sigmoid -> P(Related | Paper, Patent) in [0, 1]
+
+Layer & Parameter Breakdown:
+  • bn_input:      nn.BatchNorm1d(10)                     -> 20 params
+  • fc1 + ln1:     nn.Linear(10, 128) + nn.LayerNorm(128) -> 1,664 params
+  • fc2 + ln2:     nn.Linear(128, 64) + nn.LayerNorm(64)  -> 8,384 params
+  • attention:     FeatureAttentionLayer(dim=64)          -> 4,160 params
+  • fc3 + ln3:     nn.Linear(64, 32) + nn.LayerNorm(32)   -> 2,144 params
+  • output_layer:  nn.Linear(32, 1)                       -> 33 params
+
+Parameter Summary:
+  Total Parameters:         16,405
+  Trainable Parameters:     16,405
+  Non-Trainable Parameters: 0
+
+
+================================================================================
+3. MODEL 2: DEEP FEATURE-FUSION ANN WITH ATTENTION
+================================================================================
+File:             models/feature_fusion_ann_model.pt
+File Size:        194,071 bytes (189.52 KB)
+PyTorch Type:     collections.OrderedDict (Direct state_dict)
+Checkpoint Type:  state_dict (33 parameter tensors)
+Model Class:      DeepFeatureFusionAttentionANN
+Source File:      backend/app/models/feature_fusion_ann.py
+Training File:    training/train_models_comparison.py (Part 4)
+Inference File:   training/evaluate_retrieval_and_gaps.py
+Architecture Match: YES (100% parameter name and shape alignment)
+
+Purpose:
+  Multi-modal representation learning over partitioned feature groups. Partitions
+  the 10 input features into 4 distinct technical modalities, projects each via
+  dedicated non-linear branches, weights each modality via a learned Group
+  Saliency Attention network, and classifies the fused representation.
+
+Feature Partitioning:
+  1. Semantic Modality (4 features):
+     - semantic_similarity, abstract_similarity, emb_diff_norm, emb_product_mean
+  2. Lexical Modality (4 features):
+     - tfidf_similarity, jaccard_similarity, word_overlap_count, title_similarity
+  3. Retrieval Modality (1 feature):
+     - bm25_score
+  4. Metadata Modality (1 feature):
+     - publication_year_diff
+
+Flow Diagram:
+  Input Vector (10 Features)
+          │
+  ┌───────┼───────────────────┬───────────────────┐
+  ▼       ▼                   ▼                   ▼
+  Semantic(4)     Lexical(4)          Retrieval(1)        Metadata(1)
+  │               │                   │                   │
+  Dense(4->64)    Dense(4->64)        Dense(1->64)        Dense(1->64)
+  + LN + GELU     + LN + GELU         + LN + GELU         + LN + GELU
+  + Drop(0.20)    + Drop(0.20)        + Drop(0.20)        + Drop(0.20)
+  │               │                   │                   │
+  └───────┬───────┴───────────────────┴───────────────────┘
+          ▼
+  Group Saliency Attention Mechanism
+  [Linear(64, 32) -> Tanh -> Linear(32, 1) -> Softmax over 4 Modalities]
+          ▼
+  Dynamically Weighted Modality Fusion (256-d concatenated vector)
+          ▼
+  Dense Layer (256 -> 128) + BatchNorm1d(128) + ReLU + Dropout(0.25)
+          ▼
+  Dense Layer (128 -> 64) + LayerNorm(64) + ReLU + Dropout(0.20)
+          ▼
+  Output Dense Layer (64 -> 1)
+          ▼
+  Sigmoid Activation -> P(Related | Paper, Patent) in [0, 1]
+
+Layer & Parameter Breakdown:
+  • semantic_branch:   Linear(4, 64) + LN(64) + GELU + Drop(0.20)    -> 448 params
+  • lexical_branch:    Linear(4, 64) + LN(64) + GELU + Drop(0.20)    -> 448 params
+  • retrieval_branch:  Linear(1, 64) + LN(64) + GELU + Drop(0.20)    -> 256 params
+  • metadata_branch:   Linear(1, 64) + LN(64) + GELU + Drop(0.20)    -> 256 params
+  • group_attention:   Linear(64, 32) + Tanh + Linear(32, 1) + Softmax -> 2,113 params
+  • classifier:        Dense(256->128) + BN + Dense(128->64) + LN
+                       + Dense(64->1) + Sigmoid                       -> 41,601 params
+
+Parameter Summary:
+  Total Parameters:         45,122
+  Trainable Parameters:     45,122
+  Non-Trainable Parameters: 0
+
+
+================================================================================
+4. MODEL 3: SIAMESE / DUAL-TOWER ANN WITH CROSS-ATTENTION
+================================================================================
+File:             models/relationship_model/relationship_model.pt
+File Size:        5,686,797 bytes (5,553.51 KB)
+PyTorch Type:     collections.OrderedDict (Direct state_dict)
+Checkpoint Type:  state_dict (45 parameter tensors)
+Model Class:      SiameseCrossAttentionANN (Primary Verification)
+Source File:      backend/app/models/siamese_cross_attention_ann.py
+Training File:    training/train_models_comparison.py (Part 5) & training/train_relationship_model.py
+Inference File:   training/evaluate_retrieval_and_gaps.py & backend/app/analysis/relationship_analysis.py
+Architecture Match: YES (Exact match for SiameseCrossAttentionANN)
+
+Purpose:
+  State-of-the-art multimodal relationship learning combining dual tower text
+  encoders for scientific papers and industrial patent claims, bidirectional
+  multi-head cross-attention, direct non-linear interaction features, and RAG
+  feature projection.
+
+Towers and Modalities:
+  1. Paper Tower:  Maps 384-d MiniLM paper embedding to 256-d latent space.
+  2. Patent Tower: Maps 384-d MiniLM patent claims embedding to 256-d latent space.
+  3. Direct Interaction: [z_p, z_pt, |z_p - z_pt|, z_p * z_pt] (1024-d).
+  4. Bidirectional Cross-Attention:
+     - Paper attends to Patent: Softmax(Q_p K_pt^T / sqrt(d_k)) V_pt (4 heads, d_k=64)
+     - Patent attends to Paper: Softmax(Q_pt K_p^T / sqrt(d_k)) V_p (4 heads, d_k=64)
+     - Cross representation: [z_p_attn, z_pt_attn, diff, prod] (1024-d).
+  5. RAG Feature Projection: Dense(10 -> 64) with LayerNorm and GELU.
+  6. Fusion Layer: 1024 + 1024 + 64 = 2,112 dimensions.
+
+Flow Diagram:
+  Paper Embedding (384-d)         Patent Embedding (384-d)
+          │                               │
+  PaperTowerEncoder(384->256)     PatentTowerEncoder(384->256)
+  [Dense+LN+GELU+Drop+Dense+LN]   [Dense+LN+GELU+Drop+Dense+LN]
+          │                               │
+        z_p (256-d)                    z_pt (256-d)
+          ├───────────────────────────────┤
+          │                               │
+  Direct Interaction Vector        Bidirectional Multi-Head Cross-Attention
+  [z_p, z_pt, |z_p-z_pt|, z_p*z_pt] 4 Heads, d_k=64, Paper<->Patent Interaction
+  (1,024 dimensions)              [z_attn_p, z_attn_pt, diff, prod] (1,024-d)
+          │                               │
+          └───────────────┬───────────────┘
+                          │
+          + RAG Feature Projection [Dense(10->64)+LN+GELU+Drop] (64-d)
+                          │
+                          ▼
+            Multimodal Fusion Vector (2,112 dimensions)
+                          │
+                          ▼
+            Dense Layer (2,112 -> 256) + BatchNorm1d(256) + ReLU + Dropout(0.35)
+                          │
+                          ▼
+            Dense Layer (256 -> 64) + LayerNorm(64) + ReLU + Dropout(0.20)
+                          │
+                          ▼
+            Output Dense Layer (64 -> 1)
+                          │
+                          ▼
+            Sigmoid Activation -> P(Related | Paper, Patent) in [0, 1]
+
+Layer & Parameter Breakdown:
+  • paper_tower:     PaperTowerEncoder(384 -> 256 -> 256)         -> 165,376 params
+  • patent_tower:    PatentTowerEncoder(384 -> 256 -> 256)        -> 165,376 params
+  • cross_attention: BiDirectionalCrossAttention(dim=256, heads=4) -> 527,360 params
+  • rag_projection:  nn.Linear(10, 64) + LayerNorm(64) + GELU     -> 832 params
+  • classifier:      Dense(2112->256)+BN + Dense(256->64)+LN
+                     + Dense(64->1) + Sigmoid                     -> 558,081 params
+
+Parameter Summary:
+  Total Parameters:         1,417,025
+  Trainable Parameters:     1,417,025
+  Non-Trainable Parameters: 0
+
+DIAGNOSTIC NOTE ON DUAL-TOWER CLASS DEFINITION:
+  The project contains two dual-tower class definitions:
+  1. `SiameseCrossAttentionANN` (in `backend/app/models/siamese_cross_attention_ann.py`):
+     - Uses `proj_dim = 256`. Total parameters: 1,417,025.
+     - MATCHES `models/relationship_model/relationship_model.pt` EXACTLY.
+  2. `DualTowerCrossAttentionRelationshipModel` (in `backend/app/models/relationship_model.py`):
+     - Uses default `hidden_dim = embed_dim = 384` for towers and cross-attention,
+       producing 2,599,745 parameters (fusion_dim=3136).
+     - Attempting to load `relationship_model.pt` directly into this class produces
+       dimension mismatches (256 vs 384) and KeyError('state_dict') because the file
+       was saved as a raw state_dict rather than a wrapped dictionary.
+  Conclusion: `SiameseCrossAttentionANN` is the true source of truth architecture
+  for the trained `relationship_model.pt` weights.
+
+
+================================================================================
+5. SUPPLEMENTARY NETWORK: MULTI-TASK RESEARCH GAP DETECTION NETWORK
+================================================================================
+File:             models/gap_detection_model/gap_detection_model.pt
+File Size:        273,127 bytes (266.73 KB)
+PyTorch Type:     dict (Checkpoint Dictionary)
+Checkpoint Type:  Dictionary containing 'state_dict', 'num_features', 'num_classes', 'gap_types', 'metadata'
+Model Class:      ResearchGapDetectionNetwork
+Source File:      backend/app/models/gap_detection_model.py
+Training File:    training/train_gap_model.py
+Inference File:   backend/app/analysis/gap_detection.py & backend/app/services/inference_service.py
+Architecture Match: YES (100% parameter name and shape alignment)
+
+Purpose:
+  Multi-task downstream neural network that evaluates candidate innovation gaps.
+  It consumes 12 candidate gap features (including the Paper-Patent Relationship
+  Score from Model 3) and simultaneously predicts:
+    1. Gap Score (continuous gap probability in [0, 1])
+    2. Gap Category (6-class distribution: TECHNICAL_GAP, RESEARCH_TO_APPLICATION_GAP,
+       COMBINATION_GAP, PATENT_COVERAGE_GAP, APPLICATION_GAP, INSUFFICIENT_EVIDENCE)
+    3. Grounding Confidence (evidence confidence in [0, 1])
+
+Input Features (12 Candidate Indicators):
+  F1:  relationship_score (mean paper-patent relationship probability)
+  F2:  academic_density (volume of relevant academic literature)
+  F3:  patent_density (volume of relevant industrial patents)
+  F4:  academic_patent_ratio (coverage discrepancy ratio)
+  F5:  limitation_frequency (recurring technical limitation density)
+  F6:  combination_rarity (novelty of technology pair combination)
+  F7:  semantic_novelty (distance from established centroid)
+  F8:  retrieval_reciprocal_rank (mean reciprocal rank from RRF)
+  F9:  evidence_strength (aggregate passage credibility)
+  F10: temporal_velocity (publication velocity over last 3 years)
+  F11: domain_breadth (spread across classification domains)
+  F12: unresolved_signal (explicit problem/limitation statements)
+
+Flow Diagram:
+  12 Candidate Gap Features
+          ↓
+  Input Encoder [Dense(12 -> 128) + LayerNorm(128) + ReLU + Dropout(0.25)]
+          ↓
+  Feature Attention Layer [Linear(128, 128) + Tanh + Linear(128, 128) + Softmax]
+          ↓
+  Shared Representation Backbone:
+    - Dense(128 -> 128) + LayerNorm(128) + ReLU + Dropout(0.25)
+    - Dense(128 -> 64) + LayerNorm(64) + ReLU + Dropout(0.20)
+          │
+  ┌───────┼───────────────────────────┐
+  ▼                                   ▼                                   ▼
+  Head 1: Gap Score                   Head 2: Gap Category                Head 3: Confidence
+  Dense(64 -> 32) + ReLU              Dense(64 -> 32) + ReLU              Dense(64 -> 16) + ReLU
+  + Dense(32 -> 1)                    + Dense(32 -> 6)                    + Dense(16 -> 1)
+  + Sigmoid                           + Linear Logits                     + Sigmoid
+  (BCE Loss)                          (Cross-Entropy Loss)                (MSE Loss)
+
+Parameter Breakdown:
+  • input_encoder:     Dense(12->128) + LN(128)                           -> 1,920 params
+  • feature_attention: Linear(128, 128) + Tanh + Linear(128, 128)        -> 33,024 params
+  • backbone:          Dense(128->128) + LN + Dense(128->64) + LN         -> 25,152 params
+  • gap_score_head:    Dense(64->32) + Dense(32->1)                       -> 2,113 params
+  • gap_type_head:     Dense(64->32) + Dense(32->6)                       -> 2,278 params
+  • confidence_head:   Dense(64->16) + Dense(16->1)                       -> 1,057 params
+
+Parameter Summary:
+  Total Parameters:         65,544
+  Trainable Parameters:     65,544
+  Non-Trainable Parameters: 0
+
+
+================================================================================
+6. PRETRAINED COMPONENTS VS. CUSTOM TRAINABLE NEURAL COMPONENTS
+================================================================================
+
+To maintain scientific integrity and prevent conflating frozen foundation
+models with research contributions, the system strictly distinguishes:
+
+A. PRETRAINED COMPONENTS (External / Frozen Foundation Models):
+  1. all-MiniLM-L6-v2 (`sentence-transformers/all-MiniLM-L6-v2`):
+     - 384-dimensional dense sentence embeddings from Hugging Face.
+     - Role: Encodes raw academic abstracts and patent claims into dense vectors.
+     - Parameters are FROZEN; NOT trained or modified during this project.
+  2. ms-marco-MiniLM-L-6-v2 (`cross-encoder/ms-marco-MiniLM-L-6-v2`):
+     - Pretrained cross-encoder reranker from Hugging Face.
+     - Role: Second-stage query-document hard relevance filtering (0-100 score).
+     - Parameters are FROZEN.
+  3. FAISS (`IndexFlatIP`):
+     - Dense maximum inner product search index.
+     - Non-parametric vector index (no trainable neural weights).
+  4. Okapi BM25 (`rank-bm25`):
+     - Probabilistic sparse lexical retrieval model.
+     - Statistical frequency counting (no neural parameters).
+  5. TF-IDF (`scikit-learn`):
+     - Statistical inverse document frequency matrix.
+     - Non-parametric vocabulary weighting.
+  6. Reciprocal Rank Fusion (RRF):
+     - Algorithmic rank aggregation formula: sum(1 / (60 + rank_m)).
+     - Non-parametric fusion function.
+
+B. CUSTOM TRAINABLE DEEP-LEARNING COMPONENTS (Our Research Contributions):
+  1. Model 1 Baseline ANN (`BaselinePaperPatentANN`):
+     - Custom 5-layer MLP with dynamic Feature Attention (15,957 parameters).
+     - Trained from scratch on cross-corpus labeled pairs.
+  2. Model 1 Fine-Tuned ANN (`FineTunedPaperPatentANN`):
+     - Custom MLP with LayerNorm, LeakyReLU, and residual attention (16,405 parameters).
+     - Optimized via AdamW and learning rate decay on expanded dataset.
+  3. Model 2 Deep Feature-Fusion ANN (`DeepFeatureFusionAttentionANN`):
+     - Custom 4-branch modality projection + Group Saliency Attention (45,122 parameters).
+     - Trained from scratch on multi-modal feature partitions.
+  4. Model 3 Siamese Cross-Attention ANN (`SiameseCrossAttentionANN`):
+     - Custom dual-tower paper & patent encoders + 4-head bidirectional cross-attention
+       + multimodal fusion + classification head (1,417,025 parameters).
+     - Trained end-to-end on multimodal text embeddings + RAG features.
+  5. Downstream Gap Detection Network (`ResearchGapDetectionNetwork`):
+     - Custom multi-task shared backbone with feature saliency attention and 3 heads
+       (65,544 parameters).
+     - Trained from scratch to detect, classify, and score evidence-grounded research gaps.
+
+
+================================================================================
+7. WORKFLOW INTEGRATION: RELATIONSHIP MODEL VS. RESEARCH GAP DETECTION
+================================================================================
+
+A critical architectural distinction is how the neural models interact with
+the downstream innovation assessment pipeline:
+
+Question: Does the neural ANN directly predict the research gap?
+Answer:   NO.
+
+The workflow operates in strict decoupled sequence:
+
+1. Retrieval Phase:
+   - User inputs a research idea/query.
+   - Hybrid RAG (BM25 + TF-IDF + FAISS MiniLM -> RRF -> Cross-Encoder) retrieves
+     top-k relevant research papers and patent prior art.
+
+2. Candidate Pair Generation:
+   - All retrieved paper-patent candidate pairs are constructed.
+   - 10 heterogeneous RAG features (semantic, lexical, retrieval, metadata) are computed.
+
+3. Neural Relationship Prediction:
+   - MODEL 3 (Siamese Cross-Attention ANN) predicts the fine-grained relationship:
+     P(Related | Paper, Patent) in [0.0, 1.0].
+   - Model 1 and Model 2 serve as comparative baselines for this relationship task.
+
+4. Feature Aggregation:
+   - `extract_gap_candidate_features()` synthesizes gap indicators from:
+     • Mean and minimum paper-patent relationship scores (from Step 3)
+     • Extracted sentence-level limitations in papers and patents
+     • Corpus-level coverage ratios (academic paper volume vs. patent volume)
+     • Technology combination novelty and velocity metrics
+
+5. Neural Research Gap Detection:
+   - The 12-dimensional candidate vector is fed into `ResearchGapDetectionNetwork`.
+   - The multi-task network predicts:
+     • Gap Score: Likelihood of being an actionable technological bottleneck [0, 1]
+     • Gap Type: Categorical classification into 1 of 6 gap families
+     • Confidence: Evidence grounding confidence [0, 1]
+
+6. Innovation Scoring & Validation:
+   - `MultidimensionalScorer` combines gap scores, relationship probabilities,
+     and passage evidence into a composite 6-factor Innovation Opportunity Score.
+   - `EvidenceValidationService` filters out any gaps without strict cited passages.
+
+
+================================================================================
+8. COMPARATIVE MODEL MATRIX
+================================================================================
+
+| Model | Actual Architecture | Input | Output | Parameters | Purpose |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Model 1 (Baseline)** | BaselinePaperPatentANN | 10 RAG Features | P(Related) in [0, 1] | 15,957 | Empirical baseline relationship predictor |
+| **Model 1 (Fine-Tuned)** | FineTunedPaperPatentANN | 10 RAG Features | P(Related) in [0, 1] | 16,405 | Hyperparameter-tuned relationship predictor |
+| **Model 2 (Feature-Fusion)**| DeepFeatureFusionAttentionANN | 10 Features (4 Groups) | P(Related) in [0, 1] | 45,122 | Multi-modal group attention relationship predictor |
+| **Model 3 (Siamese Cross-Attn)**| SiameseCrossAttentionANN | 384 Paper + 384 Patent + 10 RAG | P(Related) in [0, 1] | 1,417,025 | Dual-tower bidirectional cross-attention relationship model |
+| **Gap Detection Network** | ResearchGapDetectionNetwork | 12 Candidate Gap Features | Gap Score, Type (6-class), Conf | 65,544 | Multi-task evidence-grounded research gap classifier |
+
+
+================================================================================
+9. RESEARCH PROJECT MODEL SUMMARY
+================================================================================
+
+MODEL 1 (Baseline & Fine-Tuned)
+--------------------------------------------------------------------------------
+Type:         Feed-Forward Multi-Layer Perceptron (ANN / MLP) with Saliency Attention
+Architecture: BatchNorm1d(10) -> Dense(128) -> Dense(64) -> FeatureAttention(64)
+              -> Dense(32) -> Dense(1) + Sigmoid (with LayerNorm & skip in Fine-Tuned)
+Input:        10 Heterogeneous RAG Features (1D vector)
+Output:       Continuous Probability P(Related | Paper, Patent) in [0.0, 1.0]
+Purpose:      Paper-Patent Relationship Prediction (Empirical Baseline & Fine-Tuned)
+
+MODEL 2
+--------------------------------------------------------------------------------
+Type:         Deep Feature-Fusion ANN with Multi-Modal Group Attention
+Architecture: 4 Parallel Modality Branches (Semantic, Lexical, Retrieval, Metadata)
+              -> Group Saliency Attention (Tanh + Softmax) -> Classifier (256->128->64->1)
+Input:        10 Features partitioned into 4 modality groups
+Output:       Continuous Probability P(Related | Paper, Patent) in [0.0, 1.0]
+Purpose:      Paper-Patent Relationship Prediction with Dynamic Domain Weighting
+
+MODEL 3
+--------------------------------------------------------------------------------
+Type:         Siamese / Dual-Tower Neural Network with Bidirectional Cross-Attention
+Architecture: PaperTowerEncoder(384->256) & PatentTowerEncoder(384->256)
+              -> BiDirectionalCrossAttention (4 heads, d_k=64)
+              -> RAG Projection (10->64) -> Multimodal Fusion (2,112)
+              -> Classifier (2112->256->64->1) + Sigmoid
+Input:        Paper Embedding (384-d) + Patent Embedding (384-d) + 10 RAG Features
+Output:       Continuous Probability P(Related | Paper, Patent) in [0.0, 1.0]
+Purpose:      Paper-Patent Relationship Prediction with Deep Concept Interaction
+
+DOWNSTREAM MULTI-TASK NETWORK
+--------------------------------------------------------------------------------
+Type:         Multi-Task Deep Neural Network for Research Gap Detection
+Architecture: InputEncoder(12->128) -> FeatureAttention(128) -> SharedBackbone(128->128->64)
+              -> Head 1 GapScore(64->32->1) + Head 2 GapType(64->32->6) + Head 3 Confidence(64->16->1)
+Input:        12 Candidate Gap Indicators (incorporates Paper-Patent Relationship Score)
+Output:       Gap Score [0, 1], Gap Category (6 classes), Grounding Confidence [0, 1]
+Purpose:      Automated Research Gap Identification and Categorization
+================================================================================
