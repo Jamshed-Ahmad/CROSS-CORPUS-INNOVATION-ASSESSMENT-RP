@@ -24,6 +24,24 @@ class ResearchPaper(BaseModel):
     research_value_score: Optional[float] = None
     relevance_tier: Optional[str] = None  # Highly Recommended, Strongly Relevant, Relevant, Weakly Relevant
     why_relevant: Optional[str] = None
+    # Report & Full-Text Download Fields
+    journal: Optional[str] = None
+    citation_count: Optional[int] = None
+    open_access_status: Optional[str] = None  # gold, green, hybrid, bronze, closed
+    is_open_access: Optional[bool] = False
+    pdf_url: Optional[str] = None
+    bm25_score: Optional[float] = None
+    tfidf_score: Optional[float] = None
+    semantic_score: Optional[float] = None
+    rrf_score: Optional[float] = None
+
+    @property
+    def year(self) -> Optional[int]:
+        return self.publication_year
+
+    @property
+    def url(self) -> Optional[str]:
+        return self.source_url
 
 class Patent(BaseModel):
     patent_id: str
@@ -49,6 +67,18 @@ class Patent(BaseModel):
     matched_application: Optional[str] = None
     why_relevant: Optional[str] = None
     claim_evidence: List[str] = Field(default_factory=list)
+    # Report & Identification Fields
+    country: Optional[str] = None
+    inventors: List[str] = Field(default_factory=list)
+    status: Optional[str] = "Published Application"
+    bm25_score: Optional[float] = None
+    tfidf_score: Optional[float] = None
+    semantic_score: Optional[float] = None
+    rrf_score: Optional[float] = None
+
+    @property
+    def url(self) -> Optional[str]:
+        return self.source_url
 
 class ResearchIdea(BaseModel):
     idea_id: str

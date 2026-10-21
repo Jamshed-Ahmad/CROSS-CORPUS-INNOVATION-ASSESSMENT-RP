@@ -447,3 +447,103 @@ body {
   background: rgba(197, 155, 76, 0.12);
   color: #785012;
 }
+
+/* ==========================================================================
+   Complete Research Report & Paper Download Styles
+   ========================================================================== */
+
+.btn-download-report-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: linear-gradient(135deg, #0d9488 0%, #1e3a8a 100%);
+  color: #ffffff;
+  border: 1px solid rgba(45, 212, 191, 0.5);
+  border-radius: 12px;
+  padding: 0.9rem 1.6rem;
+  font-size: 0.92rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(13, 148, 136, 0.35);
+  transition: all 0.25s ease;
+}
+
+.btn-download-report-main:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(13, 148, 136, 0.55);
+  border-color: rgba(45, 212, 191, 0.8);
+}
+
+.btn-download-report-main:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-paper-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(13, 148, 136, 0.2);
+  color: #2dd4bf;
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-paper-download:hover:not(:disabled) {
+  background: rgba(13, 148, 136, 0.35);
+  border-color: #2dd4bf;
+  color: #ffffff;
+}
+
+.btn-paper-disabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.btn-paper-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-paper-source:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.paper-card {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.paper-card:hover {
+  border-color: rgba(45, 212, 191, 0.35);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+

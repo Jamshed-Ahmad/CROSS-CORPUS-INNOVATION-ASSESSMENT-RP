@@ -45,7 +45,15 @@ class MockPatentAdapter(BasePatentAdapter):
             try:
                 with open(self.fixture_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    self._patents = [Patent(**item) for item in data]
+                    self._patents = []
+                    for idx, item in enumerate(data):
+                        if not item.get("country"):
+                            item["country"] = item.get("patent_id", "EP")[:2] if len(item.get("patent_id", "")) >= 2 else "EP"
+                        if not item.get("inventors"):
+                            item["inventors"] = ["Dr. H. Vance", "M. Richter"] if idx % 2 == 0 else ["K. Takahashi", "J. Dupont"]
+                        if not item.get("status"):
+                            item["status"] = "Granted Patent" if idx % 2 == 0 else "Published Application"
+                        self._patents.append(Patent(**item))
                     logger.info(f"Loaded {len(self._patents)} patents from {self.fixture_path}")
             except Exception as e:
                 logger.error(f"Failed to load patent fixture: {e}")

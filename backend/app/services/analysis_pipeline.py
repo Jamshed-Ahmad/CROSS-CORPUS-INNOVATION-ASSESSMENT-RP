@@ -176,6 +176,23 @@ class AnalysisPipelineService:
         fused_results = reciprocal_rank_fusion([bm25_results, tfidf_results, vector_results], top_n=request.top_k * 3)
         fused_ids = {r[0] for r in fused_results}
 
+        bm25_map = {item[0]: round(float(item[1]), 4) for item in bm25_results}
+        tfidf_map = {item[0]: round(float(item[1]), 4) for item in tfidf_results}
+        vector_map = {item[0]: round(float(item[1]), 4) for item in vector_results}
+        rrf_map = {item[0]: round(float(item[1]), 4) for item in fused_results}
+
+        for p in clean_papers:
+            p.bm25_score = bm25_map.get(p.paper_id)
+            p.tfidf_score = tfidf_map.get(p.paper_id)
+            p.semantic_score = vector_map.get(p.paper_id)
+            p.rrf_score = rrf_map.get(p.paper_id)
+
+        for pt in clean_patents:
+            pt.bm25_score = bm25_map.get(pt.patent_id)
+            pt.tfidf_score = tfidf_map.get(pt.patent_id)
+            pt.semantic_score = vector_map.get(pt.patent_id)
+            pt.rrf_score = rrf_map.get(pt.patent_id)
+
         candidate_papers = [p for p in clean_papers if p.paper_id in fused_ids] or clean_papers
         candidate_patents = [pt for pt in clean_patents if pt.patent_id in fused_ids] or clean_patents
 
@@ -255,6 +272,18 @@ class AnalysisPipelineService:
                 "data_mode": self.data_mode,
                 "paper_provider": self.paper_adapter.__class__.__name__,
                 "patent_provider": self.patent_adapter.__class__.__name__,
+                "openalex_requested": request.top_k * 3,
+                "openalex_retrieved": paper_profile.get("total_input", len(raw_papers)),
+                "openalex_usable": paper_profile.get("cleaned_output", len(clean_papers)),
+                "openalex_duplicates": paper_profile.get("duplicates_removed", 0),
+                "openalex_usable_rate": round((paper_profile.get("cleaned_output", len(clean_papers)) / max(paper_profile.get("total_input", 1), 1) * 100), 1),
+                "openalex_final_used": len(retrieved_papers),
+                "epo_requested": request.top_k * 3,
+                "epo_retrieved": patent_profile.get("total_input", len(raw_patents)),
+                "epo_usable": patent_profile.get("cleaned_output", len(clean_patents)),
+                "epo_duplicates": patent_profile.get("duplicates_removed", 0),
+                "epo_usable_rate": round((patent_profile.get("cleaned_output", len(clean_patents)) / max(patent_profile.get("total_input", 1), 1) * 100), 1),
+                "epo_final_used": len(retrieved_patents),
                 "paper_preprocessing_profile": paper_profile,
                 "patent_preprocessing_profile": patent_profile,
                 "embedding_model": self.encoder.model_name,

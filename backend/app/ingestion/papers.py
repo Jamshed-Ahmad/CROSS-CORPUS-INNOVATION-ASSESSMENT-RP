@@ -42,7 +42,19 @@ class MockPaperAdapter(BasePaperAdapter):
             try:
                 with open(self.fixture_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    self._papers = [ResearchPaper(**item) for item in data]
+                    self._papers = []
+                    for idx, item in enumerate(data):
+                        if not item.get("journal"):
+                            item["journal"] = "Journal of Machine Learning Research" if idx % 2 == 0 else "IEEE Transactions on Neural Networks"
+                        if not item.get("citation_count"):
+                            item["citation_count"] = 45 + (idx * 17) % 80
+                        if not item.get("open_access_status"):
+                            item["open_access_status"] = "gold" if idx % 3 != 0 else "hybrid"
+                        if item.get("is_open_access") is None:
+                            item["is_open_access"] = True
+                        if not item.get("pdf_url") and idx % 4 != 3:
+                            item["pdf_url"] = "https://arxiv.org/pdf/2303.08774.pdf"
+                        self._papers.append(ResearchPaper(**item))
                     logger.info(f"Loaded {len(self._papers)} papers from {self.fixture_path}")
             except Exception as e:
                 logger.error(f"Failed to load paper fixture: {e}")
@@ -161,9 +173,36 @@ class OpenAlexPaperAdapter(BasePaperAdapter):
             pub_year = item.get("publication_year")
             doi = item.get("doi")
 
-            # Source URL
+            # Source URL and Open Access PDF Detection
             primary_loc = item.get("primary_location") or {}
-            source_url = item.get("doi") or primary_loc.get("landing_page_url") or primary_loc.get("pdf_url") or work_id
+            best_oa = item.get("best_oa_location") or {}
+            
+            pdf_url = best_oa.get("pdf_url") or primary_loc.get("pdf_url")
+            if not pdf_url:
+                for loc in (item.get("locations") or []):
+                    if isinstance(loc, dict) and loc.get("pdf_url"):
+                        pdf_url = loc.get("pdf_url")
+                        break
+            
+            # Check for arXiv pattern
+            if not pdf_url and doi and "arxiv" in str(doi).lower():
+                clean_arxiv = str(doi).lower().split("arxiv.")[-1]
+                pdf_url = f"https://arxiv.org/pdf/{clean_arxiv}.pdf"
+
+            oa_info = item.get("open_access") or {}
+            oa_status = oa_info.get("oa_status") or ("gold" if pdf_url else "closed")
+            is_oa = bool(oa_info.get("is_oa", False) or pdf_url)
+            cited_by = int(item.get("cited_by_count") or 0)
+
+            # Journal / Source display name
+            journal_name = (
+                (primary_loc.get("source") or {}).get("display_name") or
+                (best_oa.get("source") or {}).get("display_name") or
+                (item.get("host_venue") or {}).get("display_name") or
+                "Scholarly Publication"
+            )
+
+            source_url = item.get("doi") or primary_loc.get("landing_page_url") or pdf_url or work_id
 
             # Keywords & Concepts
             keywords = []
@@ -190,7 +229,12 @@ class OpenAlexPaperAdapter(BasePaperAdapter):
                 source_url=source_url,
                 references=referenced_works[:10],
                 source_provider="openalex",
-                dataset_version="openalex-v1"
+                dataset_version="openalex-v1",
+                journal=journal_name,
+                citation_count=cited_by,
+                open_access_status=oa_status,
+                is_open_access=is_oa,
+                pdf_url=pdf_url
             )
         except Exception as e:
             logger.warning(f"Error mapping OpenAlex item: {e}")

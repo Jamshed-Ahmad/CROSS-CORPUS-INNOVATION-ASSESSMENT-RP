@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { analyzeIdea } from './services/api';
+import { analyzeIdea, downloadReportPdf } from './services/api';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import WhySection from './components/WhySection';
@@ -30,7 +30,9 @@ import {
   Database, 
   AlertTriangle,
   ArrowUpRight,
-  Sparkles
+  Sparkles,
+  Download,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function App() {
@@ -40,6 +42,8 @@ export default function App() {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [downloadingReport, setDownloadingReport] = useState(false);
+  const [reportFeedback, setReportFeedback] = useState(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -85,6 +89,26 @@ export default function App() {
       setError(err.message || 'Pipeline execution failed.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    if (!result?.analysis_id) return;
+    setDownloadingReport(true);
+    setReportFeedback(null);
+    try {
+      await downloadReportPdf(result.analysis_id, result.parsed_idea?.original_text);
+      setReportFeedback({
+        type: 'success',
+        message: 'Complete research analysis report PDF generated and downloaded successfully!'
+      });
+    } catch (err) {
+      setReportFeedback({
+        type: 'error',
+        message: err.message || 'Failed to download complete research report PDF.'
+      });
+    } finally {
+      setDownloadingReport(false);
     }
   };
 
@@ -176,6 +200,85 @@ export default function App() {
                     <li key={idx}>{w}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* RESEARCH ANALYSIS COMPLETE & DOWNLOAD COMPLETE RESEARCH REPORT BANNER */}
+            <div
+              className="glass-panel"
+              style={{
+                padding: '1.75rem 2rem',
+                marginBottom: '1.75rem',
+                borderRadius: '16px',
+                border: '1px solid rgba(13, 148, 136, 0.45)',
+                background: 'linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(30, 58, 138, 0.22) 100%)',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1.5rem',
+                boxShadow: '0 8px 32px rgba(13, 148, 136, 0.18)'
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.08em',
+                    color: '#2dd4bf',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.45rem',
+                    background: 'rgba(13, 148, 136, 0.25)',
+                    padding: '0.3rem 0.75rem',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(45, 212, 191, 0.35)'
+                  }}
+                >
+                  <CheckCircle2 size={15} /> RESEARCH ANALYSIS COMPLETE
+                </div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', margin: '0.25rem 0 0.4rem 0' }}>
+                  Complete Cross-Corpus Innovation Assessment Report
+                </h3>
+                <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0, maxWidth: '680px', lineHeight: 1.5 }}>
+                  Empirically synthesized across {result.papers?.length || 0} OpenAlex papers, {result.patents?.length || 0} EPO patents, {result.relationships?.length || 0} Siamese neural relationships, {result.gaps?.length || 0} identified research gaps, and 6-factor innovation scoring.
+                </p>
+              </div>
+
+              <div>
+                <button
+                  className="btn-download-report-main"
+                  onClick={handleDownloadReport}
+                  disabled={downloadingReport}
+                  title="Generate and download complete 16-section research analysis report PDF"
+                >
+                  <Download size={18} />
+                  {downloadingReport ? 'GENERATING REPORT PDF...' : 'DOWNLOAD COMPLETE RESEARCH REPORT'}
+                </button>
+              </div>
+            </div>
+
+            {/* Report Download Notification */}
+            {reportFeedback && (
+              <div
+                style={{
+                  fontSize: '0.88rem',
+                  padding: '0.75rem 1.25rem',
+                  borderRadius: '10px',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  background: reportFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.18)' : 'rgba(239, 68, 68, 0.18)',
+                  color: reportFeedback.type === 'success' ? '#34d399' : '#f87171',
+                  border: `1px solid ${reportFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`
+                }}
+              >
+                {reportFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                {reportFeedback.message}
               </div>
             )}
 
