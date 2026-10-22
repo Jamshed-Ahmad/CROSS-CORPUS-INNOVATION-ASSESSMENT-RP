@@ -64,12 +64,12 @@ class DualTowerCrossAttentionRelationshipModel(nn.Module):
         self.num_rag_features = num_rag_features
 
         # 1. Dual Towers
-        self.paper_tower = PaperTowerEncoder(embed_dim=embed_dim, hidden_dim=embed_dim, dropout=dropout)
-        self.patent_tower = PatentTowerEncoder(embed_dim=embed_dim, hidden_dim=embed_dim, dropout=dropout)
+        self.paper_tower = PaperTowerEncoder(embed_dim=embed_dim, hidden_dim=hidden_dim, dropout=dropout)
+        self.patent_tower = PatentTowerEncoder(embed_dim=embed_dim, hidden_dim=hidden_dim, dropout=dropout)
 
         # 2. Multi-Head Cross-Attention
         self.cross_attention = BiDirectionalCrossAttention(
-            embed_dim=embed_dim,
+            embed_dim=hidden_dim,
             num_heads=num_heads,
             dropout=dropout
         )
@@ -83,11 +83,7 @@ class DualTowerCrossAttentionRelationshipModel(nn.Module):
         )
 
         # 4. Fusion Dimensions
-        # [z_p (384), z_pt (384), diff (384), prod (384)] = 384 * 4 = 1536
-        # cross_repr = 384 * 4 = 1536
-        # rag_repr = 64
-        # Total = 1536 + 1536 + 64 = 3136
-        fusion_dim = (embed_dim * 4) + self.cross_attention.output_dim + 64
+        fusion_dim = (hidden_dim * 4) + self.cross_attention.output_dim + 64
 
         # 5. Prediction Head
         self.classifier = nn.Sequential(
@@ -190,11 +186,23 @@ class DualTowerCrossAttentionRelationshipModel(nn.Module):
     def load_checkpoint(cls, checkpoint_path: str, device: str = "cpu") -> "DualTowerCrossAttentionRelationshipModel":
         """Loads model from checkpoint."""
         checkpoint = torch.load(checkpoint_path, map_location=device)
+        if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+            embed_dim = checkpoint.get("embed_dim", 384)
+            num_rag_features = checkpoint.get("num_rag_features", 10)
+            hidden_dim = checkpoint.get("hidden_dim", 256)
+            state_dict = checkpoint["state_dict"]
+        else:
+            embed_dim = 384
+            num_rag_features = 10
+            hidden_dim = 256
+            state_dict = checkpoint
+
         model = cls(
-            embed_dim=checkpoint.get("embed_dim", 384),
-            num_rag_features=checkpoint.get("num_rag_features", 10)
+            embed_dim=embed_dim,
+            num_rag_features=num_rag_features,
+            hidden_dim=hidden_dim
         )
-        model.load_state_dict(checkpoint["state_dict"])
+        model.load_state_dict(state_dict)
         model.to(device)
         model.eval()
         logger.info(f"Loaded relationship model from {checkpoint_path}")

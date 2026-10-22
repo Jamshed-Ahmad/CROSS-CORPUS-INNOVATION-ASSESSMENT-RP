@@ -392,8 +392,59 @@ export default function App() {
           </button>
         </div>
 
-        <div style={{ maxWidth: '1320px', margin: '0 auto', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-dim)', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem' }}>
-          © 2026 An Evidence-Grounded AI Framework for Cross-Corpus Innovation Assessment and Recommendation Using Research Papers and Patents. All rights reserved.
+        {/* Project Information & Developer Credits Section */}
+        <div 
+          style={{ 
+            maxWidth: '1320px', 
+            margin: '0 auto 2rem auto', 
+            padding: '1.5rem 2rem', 
+            background: 'rgba(255, 255, 255, 0.02)', 
+            border: '1px solid var(--border-subtle)', 
+            borderRadius: '16px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '1.5rem'
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--gold-primary)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              Academic Research &amp; Engineering Project
+            </div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+              AI-Powered Innovation Recommendation System
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Cross-Corpus Innovation Assessment using Research Papers &amp; Patents
+            </div>
+          </div>
+
+          <div 
+            style={{ 
+              background: 'rgba(255, 255, 255, 0.03)', 
+              padding: '0.9rem 1.6rem', 
+              borderRadius: '12px', 
+              border: '1px solid var(--border-gold)' 
+            }}
+          >
+            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--gold-primary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+              Developed By
+            </div>
+            <ol style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-main)', fontSize: '0.92rem', fontWeight: 600, lineHeight: 1.6 }}>
+              <li>Jamshed Ahmad</li>
+              <li>Gaurav Chavan</li>
+            </ol>
+          </div>
+        </div>
+
+        <div style={{ maxWidth: '1320px', margin: '0 auto', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-dim)', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.5rem', lineHeight: 1.6 }}>
+          <div style={{ marginBottom: '0.35rem' }}>
+            Developed by <strong>Jamshed Ahmad</strong> &amp; <strong>Gaurav Chavan</strong> | AI-Powered Innovation Recommendation System
+          </div>
+          <div>
+            © 2026 An Evidence-Grounded AI Framework for Cross-Corpus Innovation Assessment and Recommendation Using Research Papers and Patents. All rights reserved.
+          </div>
         </div>
       </footer>
 

@@ -23,7 +23,7 @@ export default function HeroSection({ onRunAssessment, onExplore3D }) {
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="hero-description">
+        <p className="hero-description" style={{ marginBottom: '2.5rem' }}>
           An Evidence-Grounded AI Framework bridging peer-reviewed scientific literature (OpenAlex) with patent prior-art claims (European Patent Office - EPO OPS) to uncover unexploited research gaps, legal claim boundaries, and verifiable innovation opportunities.
         </p>
 
