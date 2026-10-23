@@ -1,0 +1,22 @@
+{
+  "raw_openalex_papers": 2200,
+  "papers_after_cleaning": 2199,
+  "papers_after_deduplication": 2199,
+  "raw_epo_patents": 343,
+  "patents_after_cleaning": 343,
+  "patents_after_deduplication": 343,
+  "candidate_paper_patent_pairs": 5544,
+  "after_filtering": 5544,
+  "final_labeled_pairs": 5544,
+  "total_final_samples": 5544,
+  "training_samples": 3947,
+  "training_pct": 71.19,
+  "validation_samples": 863,
+  "validation_pct": 15.57,
+  "testing_samples": 734,
+  "testing_pct": 13.24,
+  "positive_samples": 1772,
+  "positive_pct": 31.96,
+  "negative_samples": 3772,
+  "negative_pct": 68.04
+}

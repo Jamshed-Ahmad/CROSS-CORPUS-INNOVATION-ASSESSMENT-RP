@@ -1,7 +1,7 @@
 """
 feature_fusion_ann.py
 =====================
-MODEL 2: Deep Feature-Fusion ANN with Attention.
+MODEL 2: Deep Feature-Fusion Attention Network.
 
 ARCHITECTURE SPECIFICATION:
   Features are partitioned into four distinct technical modalities:

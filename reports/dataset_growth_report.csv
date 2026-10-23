@@ -1,0 +1,2 @@
+raw_openalex_papers,papers_after_cleaning,papers_after_deduplication,raw_epo_patents,patents_after_cleaning,patents_after_deduplication,candidate_paper_patent_pairs,after_filtering,final_labeled_pairs,total_final_samples,training_samples,training_pct,validation_samples,validation_pct,testing_samples,testing_pct,positive_samples,positive_pct,negative_samples,negative_pct
+2200,2199,2199,343,343,343,5544,5544,5544,5544,3947,71.19,863,15.57,734,13.24,1772,31.96,3772,68.04

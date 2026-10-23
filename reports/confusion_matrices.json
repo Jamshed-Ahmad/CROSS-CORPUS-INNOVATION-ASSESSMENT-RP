@@ -1,50 +1,50 @@
 {
   "Logistic Regression": {
-    "TN": 18,
-    "FP": 10,
-    "FN": 19,
-    "TP": 29
+    "TN": 396,
+    "FP": 80,
+    "FN": 25,
+    "TP": 233
   },
   "Support Vector Machine (RBF)": {
-    "TN": 20,
-    "FP": 8,
-    "FN": 21,
-    "TP": 27
+    "TN": 442,
+    "FP": 34,
+    "FN": 31,
+    "TP": 227
   },
   "Random Forest (100 trees)": {
-    "TN": 22,
-    "FP": 6,
-    "FN": 21,
-    "TP": 27
+    "TN": 476,
+    "FP": 0,
+    "FN": 15,
+    "TP": 243
   },
   "Gradient Boosting Classifier": {
-    "TN": 17,
-    "FP": 11,
-    "FN": 19,
-    "TP": 29
+    "TN": 476,
+    "FP": 0,
+    "FN": 15,
+    "TP": 243
   },
   "Existing ANN (Before Fine-Tuning)": {
-    "TN": 23,
-    "FP": 5,
-    "FN": 28,
-    "TP": 20
+    "TN": 441,
+    "FP": 35,
+    "FN": 16,
+    "TP": 242
   },
   "Existing ANN (Fine-Tuned)": {
-    "TN": 22,
-    "FP": 6,
-    "FN": 22,
-    "TP": 26
+    "TN": 456,
+    "FP": 20,
+    "FN": 17,
+    "TP": 241
   },
   "Feature-Fusion ANN with Attention": {
-    "TN": 18,
-    "FP": 10,
-    "FN": 24,
-    "TP": 24
+    "TN": 473,
+    "FP": 3,
+    "FN": 17,
+    "TP": 241
   },
   "Siamese Cross-Attention ANN": {
-    "TN": 18,
-    "FP": 10,
-    "FN": 12,
-    "TP": 36
+    "TN": 439,
+    "FP": 37,
+    "FN": 19,
+    "TP": 239
   }
 }

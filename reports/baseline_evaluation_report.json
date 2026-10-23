@@ -1,0 +1,66 @@
+{
+  "Model 1 (Baseline ANN)": {
+    "Train_Accuracy": 0.5153,
+    "Validation_Accuracy": 0.5846,
+    "Accuracy": 0.3684,
+    "Precision": 0.0,
+    "Recall": 0.0,
+    "F1-Score": 0.0,
+    "ROC-AUC": 0.3832,
+    "PR-AUC": 0.576,
+    "ConfusionMatrix": {
+      "TN": 28,
+      "FP": 0,
+      "FN": 48,
+      "TP": 0
+    }
+  },
+  "Model 1 (Fine-Tuned ANN)": {
+    "Train_Accuracy": 0.5153,
+    "Validation_Accuracy": 0.5846,
+    "Accuracy": 0.3684,
+    "Precision": 0.0,
+    "Recall": 0.0,
+    "F1-Score": 0.0,
+    "ROC-AUC": 0.3899,
+    "PR-AUC": 0.6056,
+    "ConfusionMatrix": {
+      "TN": 28,
+      "FP": 0,
+      "FN": 48,
+      "TP": 0
+    }
+  },
+  "Model 2 (Feature-Fusion ANN)": {
+    "Train_Accuracy": 0.5153,
+    "Validation_Accuracy": 0.5846,
+    "Accuracy": 0.3684,
+    "Precision": 0.0,
+    "Recall": 0.0,
+    "F1-Score": 0.0,
+    "ROC-AUC": 0.4345,
+    "PR-AUC": 0.6073,
+    "ConfusionMatrix": {
+      "TN": 28,
+      "FP": 0,
+      "FN": 48,
+      "TP": 0
+    }
+  },
+  "Model 3 (Siamese Cross-Attention)": {
+    "Train_Accuracy": 0.5399,
+    "Validation_Accuracy": 0.5538,
+    "Accuracy": 0.6842,
+    "Precision": 0.6765,
+    "Recall": 0.9583,
+    "F1-Score": 0.7931,
+    "ROC-AUC": 0.5484,
+    "PR-AUC": 0.659,
+    "ConfusionMatrix": {
+      "TN": 6,
+      "FP": 22,
+      "FN": 2,
+      "TP": 46
+    }
+  }
+}

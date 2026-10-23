@@ -1,7 +1,7 @@
 """
 baseline_ann.py
 ===============
-MODEL 1: Existing / Baseline ANN (PaperPatentANN) and its Fine-Tuned Variant.
+MODEL 1: Multi-Layer Perceptron (MLP) with Feature Attention (PaperPatentANN) and its Fine-Tuned Variant.
 
 ARCHITECTURE SPECIFICATION:
   Input: 10 RAG-derived heterogeneous features
@@ -51,7 +51,7 @@ class FeatureAttentionLayer(nn.Module):
 
 class BaselinePaperPatentANN(nn.Module):
     """
-    MODEL 1: Original Existing ANN Architecture (PaperPatentANN).
+    MODEL 1: Multi-Layer Perceptron (MLP) with Feature Attention (PaperPatentANN).
     Evaluated in its exact original configuration as the empirical baseline.
     """
     def __init__(self, num_features: int = 10, dropout_funnel: Tuple[float, float, float] = (0.35, 0.30, 0.20)):

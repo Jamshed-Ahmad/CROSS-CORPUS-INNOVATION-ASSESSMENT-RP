@@ -3,6 +3,10 @@ import { Sparkles, Send, RefreshCw, Layers } from 'lucide-react';
 
 const PRESETS = [
   {
+    label: "AI for Healthcare (Disease Prediction)",
+    text: "Artificial Intelligence for Healthcare: Early Disease Prediction and Diagnosis"
+  },
+  {
     label: "Drug-Target Affinity (GNN + Attention)",
     text: "Using spatial graph neural networks and dynamic transformer attention to predict drug-target binding affinity with explainable molecular substructure alignment under 3D dynamic thermal fluctuations."
   },

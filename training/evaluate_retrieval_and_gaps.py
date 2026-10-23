@@ -63,19 +63,26 @@ def evaluate_retrieval_ranking():
     X_test = scaler.transform(test_df[RELATIONSHIP_FEATURE_COLUMNS].values).astype(np.float32)
     y_test = test_df["label"].values.astype(int)
 
-    encoder = EmbeddingGenerator()
-    df_papers = pd.read_csv(DATA_PROCESSED / "papers_clean.csv")
-    df_patents = pd.read_csv(DATA_PROCESSED / "patents_clean.csv")
+    cache_dir = PROJECT_ROOT / "data" / "cache"
+    paper_cache = cache_dir / "paper_embeddings.pt"
+    patent_cache = cache_dir / "patent_embeddings.pt"
 
-    paper_emb_dict = {}
-    for _, row in df_papers.iterrows():
-        text = f"{row['title']}. {str(row.get('abstract', ''))}"
-        paper_emb_dict[row["paper_id"]] = encoder.encode([text])[0]
-
-    patent_emb_dict = {}
-    for _, row in df_patents.iterrows():
-        text = f"{row['title']}. {str(row.get('abstract', ''))} {str(row.get('claims', ''))}"
-        patent_emb_dict[row["patent_id"]] = encoder.encode([text])[0]
+    if paper_cache.exists() and patent_cache.exists():
+        logger.info("Loading precomputed embeddings from cache...")
+        paper_emb_dict = torch.load(paper_cache, map_location="cpu", weights_only=False)
+        patent_emb_dict = torch.load(patent_cache, map_location="cpu", weights_only=False)
+    else:
+        encoder = EmbeddingGenerator()
+        df_papers = pd.read_csv(DATA_PROCESSED / "papers_clean.csv")
+        df_patents = pd.read_csv(DATA_PROCESSED / "patents_clean.csv")
+        paper_emb_dict = {}
+        for _, row in df_papers.iterrows():
+            text = f"{row['title']}. {str(row.get('abstract', ''))}"
+            paper_emb_dict[row["paper_id"]] = encoder.encode([text])[0]
+        patent_emb_dict = {}
+        for _, row in df_patents.iterrows():
+            text = f"{row['title']}. {str(row.get('abstract', ''))} {str(row.get('claims', ''))}"
+            patent_emb_dict[row["patent_id"]] = encoder.encode([text])[0]
 
     p_test_embs = np.array([paper_emb_dict.get(r["paper_id"], np.zeros(384)) for _, r in test_df.iterrows()], dtype=np.float32)
     pt_test_embs = np.array([patent_emb_dict.get(r["patent_id"], np.zeros(384)) for _, r in test_df.iterrows()], dtype=np.float32)

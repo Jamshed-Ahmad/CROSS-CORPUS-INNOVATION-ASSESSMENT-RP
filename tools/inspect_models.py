@@ -239,7 +239,7 @@ def run_full_inspection():
     # -------------------------------------------------------------------------
     m1_base = BaselinePaperPatentANN(num_features=10, dropout_funnel=(0.35, 0.30, 0.20))
     display_model_inspection(
-        header_name="MODEL 1 (ORIGINAL BASELINE): Existing Baseline ANN",
+        header_name="MODEL 1 (ORIGINAL BASELINE): Multi-Layer Perceptron (MLP) with Feature Attention",
         pt_rel_path="models/baseline_ann_model.pt",
         model_instance=m1_base,
         model_class_name="BaselinePaperPatentANN",
@@ -268,7 +268,7 @@ def run_full_inspection():
     # -------------------------------------------------------------------------
     m1_ft = FineTunedPaperPatentANN(num_features=10, dropout_funnel=(0.25, 0.20, 0.15))
     display_model_inspection(
-        header_name="MODEL 1 (FINE-TUNED): Existing Fine-Tuned ANN",
+        header_name="MODEL 1 (FINE-TUNED): Multi-Layer Perceptron (MLP) with Feature Attention (Optimized)",
         pt_rel_path="models/finetuned_ann_model.pt",
         model_instance=m1_ft,
         model_class_name="FineTunedPaperPatentANN",
@@ -297,7 +297,7 @@ def run_full_inspection():
     # -------------------------------------------------------------------------
     m2_ff = DeepFeatureFusionAttentionANN(num_features=10, group_proj_dim=64, hidden_dim=128, dropout=0.20)
     display_model_inspection(
-        header_name="MODEL 2: Deep Feature-Fusion ANN with Attention",
+        header_name="MODEL 2: Deep Feature-Fusion Attention Network",
         pt_rel_path="models/feature_fusion_ann_model.pt",
         model_instance=m2_ff,
         model_class_name="DeepFeatureFusionAttentionANN",
@@ -328,7 +328,7 @@ def run_full_inspection():
         embed_dim=384, proj_dim=256, num_rag_features=10, num_heads=4, hidden_dim=256, dropout=0.25
     )
     display_model_inspection(
-        header_name="MODEL 3: Siamese / Dual-Tower ANN with Cross-Attention",
+        header_name="MODEL 3: Siamese Dual-Tower Network with Cross-Attention",
         pt_rel_path="models/relationship_model/relationship_model.pt",
         model_instance=m3_siam,
         model_class_name="SiameseCrossAttentionANN",
@@ -387,14 +387,14 @@ def run_full_inspection():
     print("=" * 80)
     print("MODEL ARCHITECTURE COMPARISON TABLE")
     print("=" * 80)
-    print(f"{'Model':<30} | {'Class':<30} | {'Input Dim':<12} | {'Output':<12} | {'Parameters':<10}")
-    print("-" * 105)
-    print(f"{'Model 1 (Baseline)':<30} | {'BaselinePaperPatentANN':<30} | {'10':<12} | {'1 (Sigmoid)':<12} | {15957:<10,}")
-    print(f"{'Model 1 (Fine-Tuned)':<30} | {'FineTunedPaperPatentANN':<30} | {'10':<12} | {'1 (Sigmoid)':<12} | {16405:<10,}")
-    print(f"{'Model 2 (Feature-Fusion)':<30} | {'DeepFeatureFusionAttentionANN':<30} | {'10 (4 groups)':<12} | {'1 (Sigmoid)':<12} | {45122:<10,}")
-    print(f"{'Model 3 (Siamese Cross-Attn)':<30} | {'SiameseCrossAttentionANN':<30} | {'384+384+10':<12} | {'1 (Sigmoid)':<12} | {1417025:<10,}")
-    print(f"{'Gap Detection Network':<30} | {'ResearchGapDetectionNetwork':<30} | {'12':<12} | {'Multi-Task':<12} | {65544:<10,}")
-    print("-" * 105)
+    print(f"{'Model':<40} | {'Class':<30} | {'Input Dim':<12} | {'Output':<12} | {'Parameters':<10}")
+    print("-" * 115)
+    print(f"{'Model 1: MLP with Feature Attention (Base)':<40} | {'BaselinePaperPatentANN':<30} | {'10':<12} | {'1 (Sigmoid)':<12} | {15957:<10,}")
+    print(f"{'Model 1: MLP with Feature Attention (FT)':<40} | {'FineTunedPaperPatentANN':<30} | {'10':<12} | {'1 (Sigmoid)':<12} | {16405:<10,}")
+    print(f"{'Model 2: Deep Feature-Fusion Attention':<40} | {'DeepFeatureFusionAttentionANN':<30} | {'10 (4 groups)':<12} | {'1 (Sigmoid)':<12} | {45122:<10,}")
+    print(f"{'Model 3: Siamese Dual-Tower Cross-Attn':<40} | {'SiameseCrossAttentionANN':<30} | {'384+384+10':<12} | {'1 (Sigmoid)':<12} | {1417025:<10,}")
+    print(f"{'Gap Detection Network':<40} | {'ResearchGapDetectionNetwork':<30} | {'12':<12} | {'Multi-Task':<12} | {65544:<10,}")
+    print("-" * 115)
     print()
 
     # -------------------------------------------------------------------------

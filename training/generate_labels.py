@@ -144,17 +144,17 @@ def build_labeled_feature_dataset() -> pd.DataFrame:
 
 def perform_leakage_safe_split(df_features: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Executes leakage-safe paper-grouped split (80% Train, 10% Val, 10% Test)
+    Executes leakage-safe paper-grouped split (70% Train, 15% Val, 15% Test)
     guaranteeing zero document overlap between train, validation, and test sets.
     """
-    logger.info("Executing leakage-safe grouped split (80% / 10% / 10%) by paper entities...")
+    logger.info("Executing leakage-safe grouped split (70% / 15% / 15%) by paper entities...")
     unique_papers = df_features["paper_id"].unique()
     np.random.seed(42)
     np.random.shuffle(unique_papers)
 
     n_total = len(unique_papers)
-    n_train = int(n_total * 0.80)
-    n_val = int(n_total * 0.10)
+    n_train = int(n_total * 0.70)
+    n_val = int(n_total * 0.15)
 
     train_papers = set(unique_papers[:n_train])
     val_papers = set(unique_papers[n_train : n_train + n_val])
@@ -164,15 +164,14 @@ def perform_leakage_safe_split(df_features: pd.DataFrame) -> Tuple[pd.DataFrame,
     val_df = df_features[df_features["paper_id"].isin(val_papers)].copy()
     test_df = df_features[df_features["paper_id"].isin(test_papers)].copy()
 
-    # Fit scaler strictly on training split only
+    # Fit scaler strictly on training split only (zero leakage)
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(train_df[RELATIONSHIP_FEATURE_COLUMNS].values)
-    X_val_scaled = scaler.transform(val_df[RELATIONSHIP_FEATURE_COLUMNS].values)
-    X_test_scaled = scaler.transform(test_df[RELATIONSHIP_FEATURE_COLUMNS].values)
+    scaler.fit(train_df[RELATIONSHIP_FEATURE_COLUMNS].values)
 
     rel_model_dir = MODELS_DIR / "relationship_model"
     rel_model_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(scaler, rel_model_dir / "feature_scaler.pkl")
+    joblib.dump(scaler, MODELS_DIR / "scaler.pkl")
 
     train_df.to_csv(DATA_TRAINING / "train.csv", index=False)
     val_df.to_csv(DATA_TRAINING / "validation.csv", index=False)

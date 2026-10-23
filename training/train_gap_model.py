@@ -156,23 +156,25 @@ def generate_synthetic_gap_training_data(n_samples: int = 150) -> Tuple[np.ndarr
 
 
 def train_gap_detection_model(
-    epochs: int = 35,
-    batch_size: int = 16,
+    epochs: int = 100,
+    batch_size: int = 32,
     lr: float = 1e-3,
+    patience: int = 15,
     device: str = "cpu"
 ) -> Tuple[ResearchGapDetectionNetwork, Dict[str, Any]]:
-    """Trains the Multi-Task ResearchGapDetectionNetwork with PyTorch."""
+    """Trains the Multi-Task ResearchGapDetectionNetwork with PyTorch (100 epochs budget)."""
     torch.manual_seed(42)
     np.random.seed(42)
 
-    X, y_score, y_type, y_conf = generate_synthetic_gap_training_data(n_samples=200)
+    X, y_score, y_type, y_conf = generate_synthetic_gap_training_data(n_samples=500)
 
-    # 70% Train, 30% Val
-    n_train = int(len(X) * 0.75)
-    X_train, X_val = torch.tensor(X[:n_train]), torch.tensor(X[n_train:])
-    y_score_tr, y_score_val = torch.tensor(y_score[:n_train]), torch.tensor(y_score[n_train:])
-    y_type_tr, y_type_val = torch.tensor(y_type[:n_train]), torch.tensor(y_type[n_train:])
-    y_conf_tr, y_conf_val = torch.tensor(y_conf[:n_train]), torch.tensor(y_conf[n_train:])
+    # 70% Train, 15% Val, 15% Test
+    n_train = int(len(X) * 0.70)
+    n_val = int(len(X) * 0.15)
+    X_train, X_val, X_test = torch.tensor(X[:n_train]), torch.tensor(X[n_train:n_train+n_val]), torch.tensor(X[n_train+n_val:])
+    y_score_tr, y_score_val, y_score_te = torch.tensor(y_score[:n_train]), torch.tensor(y_score[n_train:n_train+n_val]), torch.tensor(y_score[n_train+n_val:])
+    y_type_tr, y_type_val, y_type_te = torch.tensor(y_type[:n_train]), torch.tensor(y_type[n_train:n_train+n_val]), torch.tensor(y_type[n_train+n_val:])
+    y_conf_tr, y_conf_val, y_conf_te = torch.tensor(y_conf[:n_train]), torch.tensor(y_conf[n_train:n_train+n_val]), torch.tensor(y_conf[n_train+n_val:])
 
     model = ResearchGapDetectionNetwork(num_features=12, num_classes=len(GAP_TYPE_CLASSES)).to(device)
 
@@ -181,12 +183,15 @@ def train_gap_detection_model(
     crit_conf = nn.MSELoss()
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=4)
 
-    logger.info(f"Starting Multi-Task Gap Detection Network training ({epochs} epochs)...")
+    logger.info(f"Starting Multi-Task Gap Detection Network training (up to {epochs} epochs, patience={patience})...")
     start_time = time.time()
-    history = {"train_loss": [], "val_loss": [], "val_type_acc": []}
+    history = {"train_loss": [], "val_loss": [], "val_type_acc": [], "best_epoch": 1}
 
     best_val_loss = float("inf")
+    patience_counter = 0
+    best_weights = None
 
     for epoch in range(1, epochs + 1):
         model.train()
@@ -213,22 +218,59 @@ def train_gap_detection_model(
             val_preds = torch.argmax(v_types, dim=-1).numpy()
             type_acc = float((val_preds == y_type_val.numpy()).mean())
 
+        scheduler.step(val_loss)
+
         history["train_loss"].append(round(loss.item(), 4))
         history["val_loss"].append(round(val_loss, 4))
         history["val_type_acc"].append(round(type_acc, 4))
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
+            history["best_epoch"] = epoch
+            patience_counter = 0
+            best_weights = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            
+            # Save checkpoint
             model.save_checkpoint(
                 str(MODELS_DIR / "gap_detection_model.pt"),
                 metadata={"best_epoch": epoch, "val_loss": val_loss, "val_type_acc": type_acc}
             )
+            finetuned_dir = PROJECT_ROOT / "models" / "finetuned"
+            finetuned_dir.mkdir(parents=True, exist_ok=True)
+            model.save_checkpoint(
+                str(finetuned_dir / "gap_detection_model_finetuned.pt"),
+                metadata={"best_epoch": epoch, "val_loss": val_loss, "val_type_acc": type_acc}
+            )
+        else:
+            patience_counter += 1
+            if patience_counter >= patience:
+                logger.info(f"Early stopping at epoch {epoch} (best epoch: {history['best_epoch']})")
+                break
 
-        if epoch % 5 == 0 or epoch == epochs:
+        if epoch % 10 == 0 or epoch == epochs:
             logger.info(f"Epoch {epoch:02d}/{epochs} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss:.4f} | Type Acc: {type_acc:.3f}")
 
     training_time = time.time() - start_time
     history["training_time_s"] = round(training_time, 2)
+    history["epochs_trained"] = len(history["train_loss"])
+
+    if best_weights:
+        model.load_state_dict(best_weights)
+
+    # Evaluate on test set
+    model.eval()
+    with torch.no_grad():
+        t_scores, t_types, t_confs, _ = model(X_test)
+        test_preds = torch.argmax(t_types, dim=-1).numpy()
+        test_type_acc = float((test_preds == y_type_te.numpy()).mean())
+        test_score_mae = float(torch.abs(t_scores - y_score_te).mean().item())
+        test_conf_mae = float(torch.abs(t_confs - y_conf_te).mean().item())
+
+    history["test_type_acc"] = round(test_type_acc, 4)
+    history["test_score_mae"] = round(test_score_mae, 4)
+    history["test_conf_mae"] = round(test_conf_mae, 4)
+
+    logger.info(f"Gap Detection Network Evaluation: Test Type Acc={test_type_acc:.3f}, Score MAE={test_score_mae:.4f}, Conf MAE={test_conf_mae:.4f}")
 
     with open(REPORTS_DIR / "gap_training_history.json", "w") as f:
         json.dump(history, f, indent=2)

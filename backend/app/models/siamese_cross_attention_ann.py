@@ -1,7 +1,7 @@
 """
 siamese_cross_attention_ann.py
 ==============================
-MODEL 3: Siamese / Dual-Tower Neural Network with Bidirectional Cross-Attention.
+MODEL 3: Siamese Dual-Tower Network with Cross-Attention.
 
 ARCHITECTURE SPECIFICATION:
   Input:

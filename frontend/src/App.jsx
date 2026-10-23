@@ -17,6 +17,7 @@ import GapAnalysis from './components/GapAnalysis';
 import ScoreBreakdown from './components/ScoreBreakdown';
 import OpportunityCards from './components/OpportunityCards';
 import EvidencePanel from './components/EvidencePanel';
+import ModelEvaluationDashboard from './components/ModelEvaluationDashboard';
 
 import { 
   ShieldAlert, 
@@ -32,7 +33,8 @@ import {
   ArrowUpRight,
   Sparkles,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  Award
 } from 'lucide-react';
 
 export default function App() {
@@ -327,11 +329,19 @@ export default function App() {
               >
                 <FileText size={16} style={{ display: 'inline', marginRight: '0.4rem' }} /> Evidence Inspector ({result.evidence?.length || 0})
               </button>
+              <button
+                className={`tab-btn ${activeTab === 'models' ? 'active' : ''}`}
+                onClick={() => setActiveTab('models')}
+              >
+                <Award size={16} style={{ display: 'inline', marginRight: '0.4rem', color: 'var(--gold-primary)' }} /> <strong>Model Benchmarks</strong>
+              </button>
             </div>
 
             {/* Tab Panels */}
             {activeTab === 'overview' && (
               <div>
+                {/* Concise Model Evaluation Summary (Requirement 33) */}
+                <ModelEvaluationDashboard />
                 {result.recommendations?.length > 0 && result.recommendations[0].assessment_factors && (
                   <ScoreBreakdown factors={result.recommendations[0].assessment_factors} />
                 )}
@@ -341,6 +351,7 @@ export default function App() {
               </div>
             )}
 
+            {activeTab === 'models' && <ModelEvaluationDashboard />}
             {activeTab === '3d-graph' && <Innovation3DGraph result={result} />}
             {activeTab === 'papers' && <PaperResults papers={result.papers || []} />}
             {activeTab === 'patents' && <PatentResults patents={result.patents || []} />}

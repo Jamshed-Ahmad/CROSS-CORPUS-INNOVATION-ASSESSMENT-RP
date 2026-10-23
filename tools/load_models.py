@@ -82,7 +82,7 @@ def verify_loading():
     p1_base = models_dir / "baseline_ann_model.pt"
     p1_ft = models_dir / "finetuned_ann_model.pt"
 
-    print("Model 1 (Baseline):")
+    print("Model 1: Multi-Layer Perceptron (MLP) with Feature Attention [Baseline]:")
     print(f"Filename: {p1_base.name}")
     print(f"Path:     {p1_base.resolve()}")
     try:
@@ -111,7 +111,7 @@ def verify_loading():
         print(f"  • Required Correction: Verify models/baseline_ann_model.pt exists and matches BaselinePaperPatentANN")
 
     print()
-    print("Model 1 (Fine-Tuned):")
+    print("Model 1: Multi-Layer Perceptron (MLP) with Feature Attention [Fine-Tuned]:")
     print(f"Filename: {p1_ft.name}")
     print(f"Path:     {p1_ft.resolve()}")
     try:
@@ -140,11 +140,11 @@ def verify_loading():
         print(f"  • Required Correction: Verify models/finetuned_ann_model.pt exists and matches FineTunedPaperPatentANN")
 
     # =========================================================================
-    # MODEL 2: FEATURE-FUSION ANN WITH ATTENTION
+    # MODEL 2: DEEP FEATURE-FUSION ATTENTION NETWORK
     # =========================================================================
     p2 = models_dir / "feature_fusion_ann_model.pt"
     print()
-    print("Model 2:")
+    print("Model 2: Deep Feature-Fusion Attention Network:")
     print(f"Filename: {p2.name}")
     print(f"Path:     {p2.resolve()}")
     try:
@@ -173,11 +173,11 @@ def verify_loading():
         print(f"  • Required Correction: Ensure models/feature_fusion_ann_model.pt is loaded with DeepFeatureFusionAttentionANN")
 
     # =========================================================================
-    # MODEL 3: SIAMESE / DUAL-TOWER ANN WITH CROSS-ATTENTION
+    # MODEL 3: SIAMESE DUAL-TOWER NETWORK WITH CROSS-ATTENTION
     # =========================================================================
     p3 = models_dir / "relationship_model" / "relationship_model.pt"
     print()
-    print("Model 3:")
+    print("Model 3: Siamese Dual-Tower Network with Cross-Attention:")
     print(f"Filename: {p3.name}")
     print(f"Path:     {p3.resolve()}")
 

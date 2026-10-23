@@ -1,0 +1,9 @@
+Category,Model,Train_Acc,Val_Acc,Test_Acc,Accuracy,Precision,Recall,F1-Score,ROC-AUC,PR-AUC,Parameters,Train_Time_s,Inf_Latency_ms,Best_Epoch,Total_Epochs
+Traditional Baseline,Logistic Regression,0.87,0.8528,0.8569,0.8569,0.7444,0.9031,0.8161,0.9304,0.8844,10,0.027,0.001,N/A,N/A
+Traditional Baseline,Support Vector Machine (RBF),0.9435,0.9282,0.9114,0.9114,0.8697,0.8798,0.8748,0.9552,0.9482,10,1.187,0.074,N/A,N/A
+Traditional Baseline,Random Forest (100 trees),0.9843,0.9873,0.9796,0.9796,1.0,0.9419,0.9701,0.9678,0.973,10,0.554,0.02,N/A,N/A
+Traditional Baseline,Gradient Boosting Classifier,0.9863,0.9873,0.9796,0.9796,1.0,0.9419,0.9701,0.9707,0.9754,10,0.95,0.002,N/A,N/A
+Model 1 Baseline,Existing ANN (Before Fine-Tuning),0.9435,0.9467,0.9305,0.9305,0.8736,0.938,0.9047,0.9722,0.9729,15957,12.733,0.003,10,25
+Model 1 Fine-Tuned,Existing ANN (Fine-Tuned),0.96,0.9664,0.9496,0.9496,0.9234,0.9341,0.9287,0.9707,0.9724,16405,36.807,0.012,45,60
+Model 2 Proposed,Feature-Fusion ANN with Attention,0.9813,0.9815,0.9728,0.9728,0.9877,0.9341,0.9602,0.9706,0.9743,45122,52.46,0.007,36,51
+Model 3 Proposed,Siamese Cross-Attention ANN,0.9848,0.949,0.9237,0.9237,0.8659,0.9264,0.8951,0.9817,0.9742,1417025,114.522,0.061,14,29

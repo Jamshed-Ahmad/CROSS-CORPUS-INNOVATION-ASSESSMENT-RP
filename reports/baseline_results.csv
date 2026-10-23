@@ -1,0 +1,5 @@
+Model,Train_Acc,Val_Acc,Test_Acc,Precision,Recall,F1-Score,ROC-AUC,PR-AUC,TN,FP,FN,TP
+Model 1 (Baseline ANN),0.5153,0.5846,0.3684,0.0,0.0,0.0,0.3832,0.576,28,0,48,0
+Model 1 (Fine-Tuned ANN),0.5153,0.5846,0.3684,0.0,0.0,0.0,0.3899,0.6056,28,0,48,0
+Model 2 (Feature-Fusion ANN),0.5153,0.5846,0.3684,0.0,0.0,0.0,0.4345,0.6073,28,0,48,0
+Model 3 (Siamese Cross-Attention),0.5399,0.5538,0.6842,0.6765,0.9583,0.7931,0.5484,0.659,6,22,2,46

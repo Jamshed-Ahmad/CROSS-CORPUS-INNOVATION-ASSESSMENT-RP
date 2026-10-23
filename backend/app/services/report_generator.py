@@ -1,6 +1,7 @@
 import io
 import os
 import re
+from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -1187,6 +1188,41 @@ class ResearchReportPDFBuilder:
                 Spacer(1, 8)
             ]))
 
+        # High-Impact Model Evaluation Visualizations (Requirement 34)
+        figures_dir = Path(__file__).resolve().parent.parent.parent.parent / "reports" / "figures"
+        split_fig = figures_dir / "train_val_test_split.png"
+        if split_fig.exists():
+            story.append(KeepTogether([
+                Paragraph("<b>Figure 4: Empirical Dataset Partitioning & Leak-Free Split Distribution</b>", self.mgr.styles['SubSecHeader']),
+                Image(str(split_fig), width=540, height=200),
+                Spacer(1, 8)
+            ]))
+
+        acc_fig = figures_dir / "accuracy_before_after.png"
+        if acc_fig.exists():
+            story.append(KeepTogether([
+                Paragraph("<b>Figure 5: Model Accuracy Comparison (Before vs After Fine-Tuning)</b>", self.mgr.styles['SubSecHeader']),
+                Image(str(acc_fig), width=540, height=240),
+                Spacer(1, 8)
+            ]))
+
+        cm_fig = figures_dir / "confusion_matrices_before_after.png"
+        if cm_fig.exists():
+            story.append(KeepTogether([
+                Paragraph("<b>Figure 6: Confusion Matrix Evolution & Error Shift Analysis</b>", self.mgr.styles['SubSecHeader']),
+                Image(str(cm_fig), width=540, height=280),
+                Spacer(1, 8)
+            ]))
+
+        loss_fig = figures_dir / "training_validation_loss_all_models.png"
+        if loss_fig.exists():
+            story.append(KeepTogether([
+                Paragraph("<b>Figure 7: Neural Training Dynamics & Loss Convergence with Early Stopping</b>", self.mgr.styles['SubSecHeader']),
+                Image(str(loss_fig), width=540, height=200),
+                Spacer(1, 8)
+            ]))
+
+
     # =========================================================================
     # SECTION 12: INNOVATION ASSESSMENT
     # =========================================================================
@@ -1329,9 +1365,9 @@ class ResearchReportPDFBuilder:
 
         arch_text = (
             "<b>Neural Model Comparison:</b> To ensure rigorous innovation assessment, the system benchmarks three neural architectures:<br/>"
-            "• <b>Model 1 Baseline:</b> Existing ANN baseline (15,957 parameters) & Fine-Tuned ANN with LayerNorm, LeakyReLU, Residual Attention, and AdamW (16,405 parameters).<br/>"
-            "• <b>Model 2 Proposed:</b> Deep Feature-Fusion ANN with Multi-Head Attention (45,122 parameters).<br/>"
-            "• <b>Model 3 Proposed (Selected):</b> Siamese / Dual-Tower Cross-Attention ANN (1,417,025 parameters) featuring symmetric sentence embeddings with bidirectional cross-attention."
+            "• <b>Model 1:</b> Multi-Layer Perceptron (MLP) with Feature Attention — Baseline (15,957 parameters) & Fine-Tuned with LayerNorm, LeakyReLU, Residual Attention, and AdamW (16,405 parameters).<br/>"
+            "• <b>Model 2:</b> Deep Feature-Fusion Attention Network (45,122 parameters) featuring multi-modal partition branches and dynamic group attention.<br/>"
+            "• <b>Model 3:</b> Siamese Dual-Tower Network with Cross-Attention (1,417,025 parameters) featuring symmetric sentence embeddings with bidirectional cross-attention."
         )
         story.append(Paragraph(arch_text, self.mgr.styles['BodyRegular']))
         story.append(Spacer(1, 4))
@@ -1363,16 +1399,25 @@ class ResearchReportPDFBuilder:
                 Paragraph("0.7934", self.mgr.styles['TableCell']),
             ],
             [
-                Paragraph("Random Forest Baseline", self.mgr.styles['TableCell']),
-                Paragraph("64.47%", self.mgr.styles['TableCell']),
-                Paragraph("81.82%", self.mgr.styles['TableCell']),
-                Paragraph("56.25%", self.mgr.styles['TableCell']),
-                Paragraph("0.6667", self.mgr.styles['TableCell']),
-                Paragraph("0.6607", self.mgr.styles['TableCell']),
-                Paragraph("0.7697", self.mgr.styles['TableCell']),
+                Paragraph("Logistic Regression Baseline", self.mgr.styles['TableCell']),
+                Paragraph("85.69%", self.mgr.styles['TableCell']),
+                Paragraph("74.44%", self.mgr.styles['TableCell']),
+                Paragraph("90.31%", self.mgr.styles['TableCell']),
+                Paragraph("0.8161", self.mgr.styles['TableCell']),
+                Paragraph("0.9304", self.mgr.styles['TableCell']),
+                Paragraph("0.8844", self.mgr.styles['TableCell']),
             ],
             [
-                Paragraph("Model 1 Baseline: Original ANN", self.mgr.styles['TableCell']),
+                Paragraph("Random Forest Baseline", self.mgr.styles['TableCell']),
+                Paragraph("97.96%", self.mgr.styles['TableCell']),
+                Paragraph("100.0%", self.mgr.styles['TableCell']),
+                Paragraph("94.19%", self.mgr.styles['TableCell']),
+                Paragraph("0.9701", self.mgr.styles['TableCell']),
+                Paragraph("0.9678", self.mgr.styles['TableCell']),
+                Paragraph("0.9730", self.mgr.styles['TableCell']),
+            ],
+            [
+                Paragraph("Model 1 Baseline: MLP with Feature Attention (Before)", self.mgr.styles['TableCell']),
                 Paragraph("56.58%", self.mgr.styles['TableCell']),
                 Paragraph("80.00%", self.mgr.styles['TableCell']),
                 Paragraph("41.67%", self.mgr.styles['TableCell']),
@@ -1381,16 +1426,16 @@ class ResearchReportPDFBuilder:
                 Paragraph("0.7454", self.mgr.styles['TableCell']),
             ],
             [
-                Paragraph("Model 1 Fine-Tuned: Enhanced ANN", self.mgr.styles['TableCell']),
-                Paragraph("63.16%", self.mgr.styles['TableCell']),
-                Paragraph("81.25%", self.mgr.styles['TableCell']),
-                Paragraph("54.17%", self.mgr.styles['TableCell']),
-                Paragraph("0.6500", self.mgr.styles['TableCell']),
-                Paragraph("0.7113", self.mgr.styles['TableCell']),
-                Paragraph("0.8071", self.mgr.styles['TableCell']),
+                Paragraph("Model 1 Fine-Tuned: MLP with Feature Attention (After)", self.mgr.styles['TableCell']),
+                Paragraph("94.96%", self.mgr.styles['TableCell']),
+                Paragraph("92.34%", self.mgr.styles['TableCell']),
+                Paragraph("93.41%", self.mgr.styles['TableCell']),
+                Paragraph("0.9287", self.mgr.styles['TableCell']),
+                Paragraph("0.9707", self.mgr.styles['TableCell']),
+                Paragraph("0.9724", self.mgr.styles['TableCell']),
             ],
             [
-                Paragraph("Model 2 Proposed: Feature-Fusion Attention", self.mgr.styles['TableCell']),
+                Paragraph("Model 2 Baseline: Deep Feature-Fusion Attention (Before)", self.mgr.styles['TableCell']),
                 Paragraph("55.26%", self.mgr.styles['TableCell']),
                 Paragraph("70.59%", self.mgr.styles['TableCell']),
                 Paragraph("50.00%", self.mgr.styles['TableCell']),
@@ -1399,29 +1444,58 @@ class ResearchReportPDFBuilder:
                 Paragraph("0.7476", self.mgr.styles['TableCell']),
             ],
             [
-                Paragraph("<b>Model 3 Selected: Siamese Cross-Attention</b>", self.mgr.styles['TableCellBold']),
-                Paragraph("<b>71.05%</b>", self.mgr.styles['BadgeOA']),
-                Paragraph("<b>78.26%</b>", self.mgr.styles['TableCellBold']),
-                Paragraph("<b>75.00%</b>", self.mgr.styles['TableCellBold']),
-                Paragraph("<b>0.7660</b>", self.mgr.styles['BadgeOA']),
-                Paragraph("<b>0.8147</b>", self.mgr.styles['BadgeOA']),
-                Paragraph("<b>0.8909</b>", self.mgr.styles['BadgeOA']),
+                Paragraph("<b>Model 2 Selected: Deep Feature-Fusion Attention (After)</b>", self.mgr.styles['TableCellBold']),
+                Paragraph("<b>97.28%</b>", self.mgr.styles['BadgeOA']),
+                Paragraph("<b>98.77%</b>", self.mgr.styles['BadgeOA']),
+                Paragraph("<b>93.41%</b>", self.mgr.styles['TableCellBold']),
+                Paragraph("<b>0.9602</b>", self.mgr.styles['BadgeOA']),
+                Paragraph("<b>0.9706</b>", self.mgr.styles['BadgeOA']),
+                Paragraph("<b>0.9743</b>", self.mgr.styles['BadgeOA']),
+            ],
+            [
+                Paragraph("Model 3 Baseline: Siamese Dual-Tower Cross-Attn (Before)", self.mgr.styles['TableCell']),
+                Paragraph("71.05%", self.mgr.styles['TableCell']),
+                Paragraph("78.26%", self.mgr.styles['TableCell']),
+                Paragraph("75.00%", self.mgr.styles['TableCell']),
+                Paragraph("0.7600", self.mgr.styles['TableCell']),
+                Paragraph("0.8147", self.mgr.styles['TableCell']),
+                Paragraph("0.8909", self.mgr.styles['TableCell']),
+            ],
+            [
+                Paragraph("Model 3 Fine-Tuned: Siamese Dual-Tower Cross-Attn (After)", self.mgr.styles['TableCell']),
+                Paragraph("92.37%", self.mgr.styles['TableCell']),
+                Paragraph("86.59%", self.mgr.styles['TableCell']),
+                Paragraph("92.64%", self.mgr.styles['TableCell']),
+                Paragraph("0.8951", self.mgr.styles['TableCell']),
+                Paragraph("0.9817", self.mgr.styles['BadgeOA']),
+                Paragraph("0.9742", self.mgr.styles['TableCell']),
             ],
         ]
 
         eval_tab = Table(eval_data, colWidths=[160, 65, 60, 60, 65, 65, 65])
         eval_tab.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.mgr.navy),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, self.mgr.light_bg]),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#EFF6FF")),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, self.mgr.light_bg]),
+            ('BACKGROUND', (0, 6), (-1, 6), colors.HexColor("#EFF6FF")),
             ('BOX', (0, 0), (-1, -1), 1, self.mgr.border_color),
             ('INNERGRID', (0, 0), (-1, -1), 0.5, self.mgr.border_color),
             ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
         story.append(eval_tab)
-        story.append(Spacer(1, 10))
+        story.append(Spacer(1, 8))
+
+        # Embed Master Before vs After Comparison Matrix Figure
+        figures_dir = Path(__file__).resolve().parent.parent.parent.parent / "reports" / "figures"
+        master_fig = figures_dir / "before_after_master_comparison.png"
+        if master_fig.exists():
+            story.append(KeepTogether([
+                Paragraph("<b>Figure 8: Master Before vs After Fine-Tuning Performance & Overfitting Audit</b>", self.mgr.styles['SubSecHeader']),
+                Image(str(master_fig), width=540, height=220),
+                Spacer(1, 8)
+            ]))
+
 
     # =========================================================================
     # SECTION 15: SYSTEM METHODOLOGY

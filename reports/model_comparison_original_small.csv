@@ -6,4 +6,4 @@ Traditional Baseline,Gradient Boosting Classifier,0.6053,0.725,0.6042,0.6591,0.6
 Model 1 Baseline,Existing ANN (Before Fine-Tuning),0.5658,0.8,0.4167,0.5479,0.6376,0.7454,15957,2.392,0.043
 Model 1 Fine-Tuned,Existing ANN (Fine-Tuned),0.6316,0.8125,0.5417,0.65,0.7113,0.8071,16405,2.337,0.02
 Model 2 Proposed,Feature-Fusion ANN with Attention,0.5526,0.7059,0.5,0.5854,0.6064,0.7476,45122,3.08,0.031
-Model 3 Proposed,Siamese Cross-Attention ANN,0.7105,0.7826,0.75,0.766,0.8147,0.8909,1417025,10.985,0.097
+Model 3 Proposed,Siamese Cross-Attention ANN,0.7105,0.7826,0.75,0.76,0.8147,0.8909,1417025,10.985,0.097

@@ -10,9 +10,9 @@ Status: All 3 Core Experimentation Models & Downstream Gap Network Verified
 TABLE OF CONTENTS
 ================================================================================
 1. Overview of Neural Architectures
-2. Model 1: Existing ANN / MLP (Baseline & Fine-Tuned)
-3. Model 2: Deep Feature-Fusion ANN with Multi-Modal Attention
-4. Model 3: Siamese / Dual-Tower ANN with Bidirectional Cross-Attention
+2. Model 1: Multi-Layer Perceptron (MLP) with Feature Attention (Baseline & Fine-Tuned)
+3. Model 2: Deep Feature-Fusion Attention Network
+4. Model 3: Siamese Dual-Tower Network with Cross-Attention
 5. Supplementary Network: Multi-Task Research Gap Detection Network
 6. Pretrained Components vs. Custom Trainable Neural Components
 7. Workflow Integration: Relationship Prediction vs. Research Gap Detection
@@ -63,7 +63,7 @@ CRITICAL ARCHITECTURAL DISTINCTION:
 
 
 ================================================================================
-2. MODEL 1: EXISTING ANN / MLP (BASELINE & FINE-TUNED)
+2. MODEL 1: MULTI-LAYER PERCEPTRON (MLP) WITH FEATURE ATTENTION
 ================================================================================
 
 --------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ Parameter Summary:
 
 
 ================================================================================
-3. MODEL 2: DEEP FEATURE-FUSION ANN WITH ATTENTION
+3. MODEL 2: DEEP FEATURE-FUSION ATTENTION NETWORK
 ================================================================================
 File:             models/feature_fusion_ann_model.pt
 File Size:        194,071 bytes (189.52 KB)
@@ -249,7 +249,7 @@ Parameter Summary:
 
 
 ================================================================================
-4. MODEL 3: SIAMESE / DUAL-TOWER ANN WITH CROSS-ATTENTION
+4. MODEL 3: SIAMESE DUAL-TOWER NETWORK WITH CROSS-ATTENTION
 ================================================================================
 File:             models/relationship_model/relationship_model.pt
 File Size:        5,686,797 bytes (5,553.51 KB)
@@ -508,10 +508,10 @@ The workflow operates in strict decoupled sequence:
 
 | Model | Actual Architecture | Input | Output | Parameters | Purpose |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Model 1 (Baseline)** | BaselinePaperPatentANN | 10 RAG Features | P(Related) in [0, 1] | 15,957 | Empirical baseline relationship predictor |
-| **Model 1 (Fine-Tuned)** | FineTunedPaperPatentANN | 10 RAG Features | P(Related) in [0, 1] | 16,405 | Hyperparameter-tuned relationship predictor |
-| **Model 2 (Feature-Fusion)**| DeepFeatureFusionAttentionANN | 10 Features (4 Groups) | P(Related) in [0, 1] | 45,122 | Multi-modal group attention relationship predictor |
-| **Model 3 (Siamese Cross-Attn)**| SiameseCrossAttentionANN | 384 Paper + 384 Patent + 10 RAG | P(Related) in [0, 1] | 1,417,025 | Dual-tower bidirectional cross-attention relationship model |
+| **Model 1 (Baseline)** | Multi-Layer Perceptron (MLP) with Feature Attention | 10 RAG Features | P(Related) in [0, 1] | 15,957 | Empirical baseline relationship predictor |
+| **Model 1 (Fine-Tuned)** | Multi-Layer Perceptron (MLP) with Feature Attention | 10 RAG Features | P(Related) in [0, 1] | 16,405 | Hyperparameter-tuned relationship predictor |
+| **Model 2 (Production)**| Deep Feature-Fusion Attention Network | 10 Features (4 Groups) | P(Related) in [0, 1] | 45,122 | Multi-modal group attention relationship predictor |
+| **Model 3 (Dual-Tower)**| Siamese Dual-Tower Network with Cross-Attention | 384 Paper + 384 Patent + 10 RAG | P(Related) in [0, 1] | 1,417,025 | Dual-tower bidirectional cross-attention relationship model |
 | **Gap Detection Network** | ResearchGapDetectionNetwork | 12 Candidate Gap Features | Gap Score, Type (6-class), Conf | 65,544 | Multi-task evidence-grounded research gap classifier |
 
 
@@ -519,41 +519,123 @@ The workflow operates in strict decoupled sequence:
 9. RESEARCH PROJECT MODEL SUMMARY
 ================================================================================
 
-MODEL 1 (Baseline & Fine-Tuned)
+================================================================================
+9. MODEL ARCHITECTURE REPORT SPECIFICATION
+================================================================================
+
+MODEL 1
 --------------------------------------------------------------------------------
-Type:         Feed-Forward Multi-Layer Perceptron (ANN / MLP) with Saliency Attention
-Architecture: BatchNorm1d(10) -> Dense(128) -> Dense(64) -> FeatureAttention(64)
-              -> Dense(32) -> Dense(1) + Sigmoid (with LayerNorm & skip in Fine-Tuned)
-Input:        10 Heterogeneous RAG Features (1D vector)
-Output:       Continuous Probability P(Related | Paper, Patent) in [0.0, 1.0]
-Purpose:      Paper-Patent Relationship Prediction (Empirical Baseline & Fine-Tuned)
+Name:
+Model 1: Multi-Layer Perceptron (MLP) with Feature Attention
+
+Model Type:
+Feed-Forward Neural Network / Multi-Layer Perceptron with Dynamic Feature Saliency Attention
+
+Architecture:
+BatchNorm1d(10) -> Linear(10, 128) + [ReLU / LayerNorm+LeakyReLU] + Dropout -> Linear(128, 64) + [ReLU / LayerNorm+LeakyReLU] + Dropout -> FeatureAttentionLayer(64, Softmax) [with residual skip in fine-tuned] -> Linear(64, 32) + [ReLU / LayerNorm+LeakyReLU] + Dropout -> Linear(32, 1) + Sigmoid
+
+Input:
+10 Heterogeneous RAG Features (1D continuous vector)
+
+Hidden Layers:
+Dense(128), Dense(64), FeatureAttention(64), Dense(32)
+
+Output:
+Continuous scalar probability P(Related | Paper, Patent) in [0.0, 1.0]
+
+Purpose:
+Evaluates cross-corpus technical relatedness between scientific publications and patent claims using pre-extracted lexical, semantic, and retrieval features. Serves as the foundational tabular baseline and fine-tuned benchmark.
+
+--------------------------------------------------------------------------------
 
 MODEL 2
 --------------------------------------------------------------------------------
-Type:         Deep Feature-Fusion ANN with Multi-Modal Group Attention
-Architecture: 4 Parallel Modality Branches (Semantic, Lexical, Retrieval, Metadata)
-              -> Group Saliency Attention (Tanh + Softmax) -> Classifier (256->128->64->1)
-Input:        10 Features partitioned into 4 modality groups
-Output:       Continuous Probability P(Related | Paper, Patent) in [0.0, 1.0]
-Purpose:      Paper-Patent Relationship Prediction with Dynamic Domain Weighting
+Name:
+Model 2: Deep Feature-Fusion Attention Network
+
+Model Type:
+Multi-Modal Partitioned Neural Network with Learned Group Saliency Attention
+
+Architecture:
+4 Domain Projection Branches:
+  - Semantic Branch (4): Linear(4, 64) + LayerNorm(64) + GELU + Dropout(0.20)
+  - Lexical Branch (4): Linear(4, 64) + LayerNorm(64) + GELU + Dropout(0.20)
+  - Retrieval Branch (1): Linear(1, 64) + LayerNorm(64) + GELU + Dropout(0.20)
+  - Metadata Branch (1): Linear(1, 64) + LayerNorm(64) + GELU + Dropout(0.20)
+Group Saliency Attention:
+  Stack(4 x 64) -> Linear(64, 32) + Tanh + Linear(32, 1) -> Softmax -> Fused Vector (256)
+Classification Backbone:
+  Linear(256, 128) + BatchNorm1d(128) + ReLU + Dropout(0.25) -> Linear(128, 64) + LayerNorm(64) + ReLU + Dropout(0.20) -> Linear(64, 1) + Sigmoid
+
+Input:
+10 Features partitioned into 4 modalities: Semantic (4), Lexical (4), Retrieval (1), Metadata (1)
+
+Hidden Layers:
+4 Parallel 64-d Branches, 256-d Fused Attention Representation, Classifier Hidden Layers (128, 64)
+
+Output:
+Continuous probability P(Related | Paper, Patent) in [0.0, 1.0]
+
+Purpose:
+Production-standard cross-corpus relationship predictor. Dynamically weights domain-specific modalities to resolve semantic and lexical disparities, achieving 97.28% test accuracy, 0.9602 F1, and 0.007 ms inference latency.
+
+--------------------------------------------------------------------------------
 
 MODEL 3
 --------------------------------------------------------------------------------
-Type:         Siamese / Dual-Tower Neural Network with Bidirectional Cross-Attention
-Architecture: PaperTowerEncoder(384->256) & PatentTowerEncoder(384->256)
-              -> BiDirectionalCrossAttention (4 heads, d_k=64)
-              -> RAG Projection (10->64) -> Multimodal Fusion (2,112)
-              -> Classifier (2112->256->64->1) + Sigmoid
-Input:        Paper Embedding (384-d) + Patent Embedding (384-d) + 10 RAG Features
-Output:       Continuous Probability P(Related | Paper, Patent) in [0.0, 1.0]
-Purpose:      Paper-Patent Relationship Prediction with Deep Concept Interaction
+Name:
+Model 3: Siamese Dual-Tower Network with Cross-Attention
+
+Model Type:
+Siamese / Dual-Tower Deep Neural Network with Bidirectional Multi-Head Cross-Attention
+
+Architecture:
+Dual Encoders:
+  - PaperTowerEncoder: Linear(384, 256) + LayerNorm(256) + GELU + Dropout(0.25) -> z_p
+  - PatentTowerEncoder: Linear(384, 256) + LayerNorm(256) + GELU + Dropout(0.25) -> z_pt
+Direct Interaction Vector:
+  [z_p, z_pt, |z_p - z_pt|, z_p * z_pt] (1,024 dimensions)
+Bidirectional Cross-Attention:
+  PyTorch MultiheadAttention (256, 4 heads, d_k=64) Paper->Patent AND Patent->Paper -> Fused Cross-Repr (1,024 dimensions)
+RAG Feature Projection:
+  Linear(10, 64) + LayerNorm(64) + GELU + Dropout(0.25)
+Classification Backbone:
+  Fused (2,112) -> Linear(2112, 256) + BatchNorm1d(256) + ReLU + Dropout(0.35) -> Linear(256, 64) + LayerNorm(64) + ReLU + Dropout(0.20) -> Linear(64, 1) + Sigmoid
+
+Input:
+Paper Embedding (384-d) + Patent Embedding (384-d) + 10 Tabular RAG Features
+
+Hidden Layers:
+Towers (256, 256), Cross-Attention (256), RAG Proj (64), Fusion (2,112), Classifier (256, 64)
+
+Output:
+Continuous probability P(Related | Paper, Patent) in [0.0, 1.0]
+
+Purpose:
+Deep semantic representation learning that directly bridges raw scientific literature embeddings and patent claims via token/concept-level cross-attention (0.9817 ROC-AUC).
+
+--------------------------------------------------------------------------------
 
 DOWNSTREAM MULTI-TASK NETWORK
 --------------------------------------------------------------------------------
-Type:         Multi-Task Deep Neural Network for Research Gap Detection
-Architecture: InputEncoder(12->128) -> FeatureAttention(128) -> SharedBackbone(128->128->64)
-              -> Head 1 GapScore(64->32->1) + Head 2 GapType(64->32->6) + Head 3 Confidence(64->16->1)
-Input:        12 Candidate Gap Indicators (incorporates Paper-Patent Relationship Score)
-Output:       Gap Score [0, 1], Gap Category (6 classes), Grounding Confidence [0, 1]
-Purpose:      Automated Research Gap Identification and Categorization
+Name:
+Research Gap Detection Network
+
+Model Type:
+Multi-Task Deep Neural Network for Research Gap Detection
+
+Architecture:
+InputEncoder(12->128) -> FeatureAttention(128) -> SharedBackbone(128->128->64) -> Head 1 GapScore(64->32->1) + Head 2 GapType(64->32->6) + Head 3 Confidence(64->16->1)
+
+Input:
+12 Candidate Gap Indicators (incorporates Paper-Patent Relationship Score)
+
+Hidden Layers:
+InputEncoder(128), FeatureAttention(128), Backbone(128, 64), Head 1(32), Head 2(32), Head 3(16)
+
+Output:
+Gap Score [0, 1], Gap Category (6 classes), Grounding Confidence [0, 1]
+
+Purpose:
+Automated Research Gap Identification, Categorization, and Evidence Grounding
 ================================================================================
